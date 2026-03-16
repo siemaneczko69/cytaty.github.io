@@ -10,7 +10,7 @@
 
 // ─────────────────────────────────────────
 //  ⚙️  WKLEJ SWÓJ KLUCZ TUTAJ:
-const API_KEY = "$2a$10$MIpmqwJ.DM4Kh1iHLzTesuUokUJLIH3UvyGTp.eeUOfNth5mH1hMu";
+const API_KEY = "$2a$10$5a1zTNay6AbYWcBBCw.AOuaWMxqKhTFP0TR/yIwnqalEQad0M6nom";
 // ─────────────────────────────────────────
 
 const BIN_NAME     = "glosy-swiata-cytaty";
