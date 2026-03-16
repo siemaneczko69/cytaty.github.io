@@ -10,6 +10,11 @@ const FIREBASE_URL = "https://glosy-swiata-default-rtdb.europe-west1.firebasedat
 
 // ─── Seed quotes ───
 
+const SEED_QUOTES = [
+  { id:"deafult", text:"Nie kochać cycków to jak nie lubić zimnego piwa, oddychania lub kebaba niby można ale co to za życie", author:"Mariolka <3", tag:"miłość", color:"dusk", date:"1981-05-13" },
+];
+
+
 let quotes        = [];
 let currentFilter = "all";
 let currentSearch = "";
