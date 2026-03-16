@@ -9,8 +9,6 @@ const FIREBASE_URL = "https://glosy-swiata-default-rtdb.europe-west1.firebasedat
 // np. "https://glosy-swiata-default-rtdb.europe-west1.firebasedatabase.app"
 
 // ─── Seed quotes ───
-const SEED_QUOTES = [
-];
 
 let quotes        = [];
 let currentFilter = "all";
