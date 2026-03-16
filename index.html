@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cytaty — Głosy Świata</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="grain"></div>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <img src="logo.svg" alt="Logo" class="logo-img" />
+        <span class="logo-text">Głosy<em>Świata</em></span>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-view="feed">Cytaty</button>
+        <button class="nav-btn" data-view="add">+ Dodaj</button>
+        <button class="nav-btn" data-view="about">Info</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- FEED VIEW -->
+    <section class="view active" id="view-feed">
+      <div class="feed-header">
+        <h1 class="feed-title">Głosy <span class="accent">Świata</span></h1>
+        <p class="feed-sub">Zbiorowa mądrość jednego miejsca</p>
+        <div class="feed-controls">
+          <input type="text" id="search-input" class="search-input" placeholder="Szukaj cytatu lub autora…" />
+          <div class="filter-row">
+            <button class="filter-btn active" data-filter="all">Wszystkie</button>
+            <button class="filter-btn" data-filter="moje">Moje</button>
+            <button class="filter-btn" data-filter="popularne">Popularne ❤</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quotes-grid" id="quotes-grid">
+        <!-- filled by JS -->
+      </div>
+
+      <div class="empty-state hidden" id="empty-state">
+        <img src="empty.svg" alt="Brak cytatów" />
+        <p>Nie znaleziono cytatów.<br/>Bądź pierwszy!</p>
+        <button class="btn-primary" id="go-add-btn">Dodaj cytat</button>
+      </div>
+    </section>
+
+    <!-- ADD VIEW -->
+    <section class="view" id="view-add">
+      <div class="add-container">
+        <h2 class="section-title">Nowy cytat</h2>
+
+        <div class="form-card">
+          <div class="form-group">
+            <label for="quote-author">Twoje imię / pseudonim</label>
+            <input type="text" id="quote-author" class="form-input" placeholder="np. Jan K." maxlength="60" />
+          </div>
+
+          <div class="form-group">
+            <label for="quote-text">Cytat <span class="char-count" id="char-count">0 / 280</span></label>
+            <textarea id="quote-text" class="form-textarea" placeholder="Wpisz swój cytat…" maxlength="280" rows="4"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Kategoria</label>
+            <div class="tag-selector" id="tag-selector">
+              <button class="tag-option active" data-tag="ogólne">ogólne</button>
+              <button class="tag-option" data-tag="motywacja">motywacja</button>
+              <button class="tag-option" data-tag="miłość">miłość</button>
+              <button class="tag-option" data-tag="mądrość">mądrość</button>
+              <button class="tag-option" data-tag="humor">humor</button>
+              <button class="tag-option" data-tag="filozofia">filozofia</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Kolor karty</label>
+            <div class="color-picker" id="color-picker">
+              <button class="color-swatch active" data-color="ink" style="background:#1a1a2e" title="Ink"></button>
+              <button class="color-swatch" data-color="wine" style="background:#4a0e0e" title="Wine"></button>
+              <button class="color-swatch" data-color="forest" style="background:#0d2b1e" title="Forest"></button>
+              <button class="color-swatch" data-color="ocean" style="background:#0a1f3a" title="Ocean"></button>
+              <button class="color-swatch" data-color="dusk" style="background:#2a1a3e" title="Dusk"></button>
+              <button class="color-swatch light" data-color="cream" style="background:#f5f0e8" title="Cream"></button>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-secondary" id="clear-form-btn">Wyczyść</button>
+            <button class="btn-primary" id="submit-quote-btn">Opublikuj cytat</button>
+          </div>
+
+          <div class="form-preview" id="form-preview">
+            <span class="preview-label">Podgląd</span>
+            <div class="quote-card preview-card" id="preview-card" data-color="ink">
+              <div class="quote-mark">&ldquo;</div>
+              <p class="quote-text-preview" id="preview-text">Twój cytat pojawi się tutaj…</p>
+              <div class="quote-author-preview">— <span id="preview-author">Autor</span></div>
+              <span class="quote-tag-preview" id="preview-tag">ogólne</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT VIEW -->
+    <section class="view" id="view-about">
+      <div class="about-container">
+        <h2 class="section-title">O aplikacji</h2>
+        <div class="about-card">
+          <img src="about.svg" alt="About illustration" class="about-img" />
+          <div class="about-content">
+            <p>
+              <strong>Głosy Świata</strong> to miejsce, gdzie każdy może zostawić swój ślad
+              w postaci cytatu — własnych słów lub myśli, które warto zapamiętać.
+            </p>
+            <p>
+              Cytaty przechowywane są lokalnie w Twojej przeglądarce (localStorage / JSON).
+              Możesz je polubić, usunąć własne oraz przeszukiwać według autora lub treści.
+            </p>
+            <div class="tech-list">
+              <h3>Technologie</h3>
+              <ul>
+                <li><span class="tech-badge html">HTML</span> struktura strony</li>
+                <li><span class="tech-badge css">CSS</span> style i animacje</li>
+                <li><span class="tech-badge js">JS</span> logika aplikacji</li>
+                <li><span class="tech-badge json">JSON</span> zapis cytatów</li>
+                <li><span class="tech-badge svg">SVG</span> grafiki i logo</li>
+                <li><span class="tech-badge xml">XML</span> eksport danych</li>
+                <li><span class="tech-badge csv">CSV</span> eksport tabelaryczny</li>
+                <li><span class="tech-badge font">Fonts</span> czcionki webowe</li>
+              </ul>
+            </div>
+            <div class="export-section">
+              <h3>Eksportuj cytaty</h3>
+              <div class="export-btns">
+                <button class="btn-export" id="export-json">⬇ JSON</button>
+                <button class="btn-export" id="export-csv">⬇ CSV</button>
+                <button class="btn-export" id="export-xml">⬇ XML</button>
+                <button class="btn-export" id="export-txt">⬇ TXT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div class="modal-quote-mark">&ldquo;</div>
+      <p class="modal-text" id="modal-text"></p>
+      <div class="modal-author" id="modal-author"></div>
+      <span class="modal-tag" id="modal-tag"></span>
+      <div class="modal-date" id="modal-date"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

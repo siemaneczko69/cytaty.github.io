@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aplikacja>
+  <nazwa>Głosy Świata</nazwa>
+  <wersja>1.0.0</wersja>
+  <opis>Aplikacja do tworzenia i przeglądania cytatów</opis>
+  <konfiguracja>
+    <maxDlugoscCytatu>280</maxDlugoscCytatu>
+    <maxDlugoscAutora>60</maxDlugoscAutora>
+    <domyslnaKategoria>ogólne</domyslnaKategoria>
+    <domyslnyKolor>ink</domyslnyKolor>
+  </konfiguracja>
+  <kategorie>
+    <kategoria id="1">ogólne</kategoria>
+    <kategoria id="2">motywacja</kategoria>
+    <kategoria id="3">miłość</kategoria>
+    <kategoria id="4">mądrość</kategoria>
+    <kategoria id="5">humor</kategoria>
+    <kategoria id="6">filozofia</kategoria>
+  </kategorie>
+  <kolory>
+    <kolor id="ink">#1a1a2e</kolor>
+    <kolor id="wine">#4a0e0e</kolor>
+    <kolor id="forest">#0d2b1e</kolor>
+    <kolor id="ocean">#0a1f3a</kolor>
+    <kolor id="dusk">#2a1a3e</kolor>
+    <kolor id="cream">#f5f0e8</kolor>
+  </kolory>
+</aplikacja>
