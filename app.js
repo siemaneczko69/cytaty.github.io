@@ -10,12 +10,6 @@ const FIREBASE_URL = "WKLEJ_TUTAJ_URL_FIREBASE";
 
 // ─── Seed quotes ───
 const SEED_QUOTES = [
-  { id:"seed-1", text:"Nie ma nic piękniejszego niż człowiek, który nie boi się być sobą.", author:"Anna M.", tag:"filozofia", color:"dusk", date:"2024-01-10" },
-  { id:"seed-2", text:"Każdy poranek to drugi egzemplarz tej samej książki — czytamy go zupełnie inaczej.", author:"Tomasz W.", tag:"filozofia", color:"ocean", date:"2024-02-03" },
-  { id:"seed-3", text:"Śmiech to najkrótszy dystans między dwojgiem ludzi.", author:"Viktor Borge", tag:"humor", color:"wine", date:"2024-01-28" },
-  { id:"seed-4", text:"Podróż tysiąca mil zaczyna się od jednego kroku.", author:"Laozi", tag:"motywacja", color:"forest", date:"2024-03-01" },
-  { id:"seed-5", text:"Kochać to znaleźć własne szczęście w szczęściu drugiej osoby.", author:"Gottfried Leibniz", tag:"miłość", color:"cream", date:"2024-02-14" },
-  { id:"seed-6", text:"Wiedza mówi — mądrość słucha.", author:"Jimi Hendrix", tag:"mądrość", color:"ink", date:"2024-03-12" }
 ];
 
 let quotes        = [];
