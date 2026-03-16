@@ -5,7 +5,7 @@
  * Wklej URL swojej bazy Firebase poniżej:
  */
 
-const FIREBASE_URL = "WKLEJ_TUTAJ_URL_FIREBASE";
+const FIREBASE_URL = "https://glosy-swiata-default-rtdb.europe-west1.firebasedatabase.app/";
 // np. "https://glosy-swiata-default-rtdb.europe-west1.firebasedatabase.app"
 
 // ─── Seed quotes ───
