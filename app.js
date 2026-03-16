@@ -10,7 +10,7 @@
  *  5. Wklej poniżej w FIREBASE_URL
  */
 
-const FIREBASE_URL = "https://glosy-swiata-default-rtdb.europe-west1.firebasedatabase.app/"; // np. "https://glosy-swiata-default-rtdb.firebaseio.com"
+const FIREBASE_URL = "${{secrets.BAZADANYCH}}"; // np. "https://glosy-swiata-default-rtdb.firebaseio.com"
 
 // ─── Seed quotes ───
 const SEED_QUOTES = [
