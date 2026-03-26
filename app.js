@@ -133,7 +133,7 @@ function showConfigWarning() {
 function renderQuotes() {
   const grid  = document.getElementById("quotes-grid");
   const empty = document.getElementById("empty-state");
-  let filtered = [...quotes];
+  let filtered = [...quotes].sort((a,b) => new Date(b.date) - new Date(a.date));
   if (currentFilter === "popularne") filtered = [...filtered].sort((a,b) => b.likes - a.likes);
   if (currentCategory) filtered = filtered.filter(q => q.tag === currentCategory);
   if (currentSearch.trim()) {

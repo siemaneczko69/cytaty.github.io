@@ -31,6 +31,9 @@
   --card-ocean:  linear-gradient(135deg, #0a1f3a 0%, #060f1d 100%);
   --card-dusk:   linear-gradient(135deg, #2a1a3e 0%, #180e26 100%);
   --card-cream:  linear-gradient(135deg, #f5f0e8 0%, #ede7d7 100%);
+  --card-rose:   linear-gradient(135deg, #3d1525 0%, #220b15 100%);
+  --card-ember:  linear-gradient(135deg, #3a1f0a 0%, #1f0e00 100%);
+  --card-sage:   linear-gradient(135deg, #1a2b1a 0%, #0d180d 100%);
 }
 
 /* ─── Reset & Base ─── */
@@ -192,6 +195,9 @@ body {
 .quote-card[data-color="ocean"]  { background: var(--card-ocean); }
 .quote-card[data-color="dusk"]   { background: var(--card-dusk); }
 .quote-card[data-color="cream"]  { background: var(--card-cream); color: #2a2018; }
+.quote-card[data-color="rose"]   { background: var(--card-rose); }
+.quote-card[data-color="ember"]  { background: var(--card-ember); }
+.quote-card[data-color="sage"]   { background: var(--card-sage); }
 .quote-card[data-color="cream"] .quote-meta,
 .quote-card[data-color="cream"] .quote-author-line { color: rgba(42,32,24,0.6); }
 .quote-card[data-color="cream"] .quote-tag { color: rgba(42,32,24,0.5); border-color: rgba(42,32,24,0.2); }
@@ -401,14 +407,16 @@ body {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: overlayFadeIn 0.25s cubic-bezier(0.4,0,0.2,1);
 }
 .modal {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 48px 40px 36px;
   max-width: 520px; width: 100%; position: relative;
-  animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: modalSlideUp 0.35s cubic-bezier(0.22,1,0.36,1);
 }
-@keyframes modalIn { from { opacity:0; transform: scale(0.92); } to { opacity:1; transform: scale(1); } }
+@keyframes overlayFadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes modalSlideUp { from { opacity:0; transform: translateY(32px) scale(0.97); } to { opacity:1; transform: translateY(0) scale(1); } }
 .modal-close {
   position: absolute; top: 16px; right: 20px;
   background: none; border: none; color: var(--text-dim);
