@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admina — Głosy Świata</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@0,400;0,500&family=Lato:wght@300;400;700&display=swap" />
+  <style>
+    :root {
+      --bg:         #0e0e14;
+      --bg-2:       #13131c;
+      --surface:    #1c1c28;
+      --surface-2:  #242434;
+      --border:     rgba(255,255,255,0.07);
+      --gold:       #c9a84c;
+      --gold-dim:   rgba(201,168,76,0.15);
+      --text:       #e8e4d8;
+      --text-dim:   rgba(232,228,216,0.5);
+      --text-faint: rgba(232,228,216,0.25);
+      --accent:     #e8735a;
+      --green:      #4caf7a;
+      --radius:     12px;
+      --radius-lg:  20px;
+      --shadow:     0 8px 40px rgba(0,0,0,0.6);
+      --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lato', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .grain { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px; opacity: 0.5; }
+    .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.08; animation: drift 20s ease-in-out infinite alternate; }
+    .orb-1 { width: 500px; height: 500px; background: #c9a84c; top: -100px; right: -100px; animation-delay: 0s; }
+    .orb-2 { width: 400px; height: 400px; background: #e8735a; bottom: -80px; left: -80px; animation-delay: -7s; }
+    .orb-3 { width: 300px; height: 300px; background: #7a6aff; top: 40%; left: 40%; animation-delay: -14s; }
+    @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+
+    /* LOGIN */
+    #login-wrap { position: relative; z-index: 10; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 48px 40px 40px; width: 100%; max-width: 400px; box-shadow: var(--shadow); }
+    .login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .login-logo-text { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; }
+    .login-logo-text em { color: var(--gold); font-style: italic; }
+    .login-badge { font-family: 'DM Mono', monospace; font-size: 0.6rem; background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 2px 8px; border-radius: 20px; }
+    .login-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .login-sub { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text-dim); margin-bottom: 32px; }
+    .login-input { width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.9rem; padding: 12px 16px; margin-bottom: 16px; outline: none; transition: var(--transition); letter-spacing: 0.1em; }
+    .login-input:focus { border-color: var(--gold); }
+    .login-btn { width: 100%; background: var(--gold); color: #1a1200; border: none; border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 0.82rem; font-weight: 500; padding: 13px; cursor: pointer; transition: var(--transition); }
+    .login-btn:hover { opacity: 0.88; } .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-error { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--accent); margin-top: 12px; text-align: center; min-height: 18px; }
+    .setup-hint { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-faint); margin-top: 20px; text-align: center; line-height: 1.8; }
+    .setup-hint a { color: var(--gold); text-decoration: none; }
+
+    /* PANEL SHELL */
+    #panel { display: none; position: relative; z-index: 10; min-height: 100vh; }
+    .panel-header { position: sticky; top: 0; z-index: 100; background: rgba(14,14,20,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .panel-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; }
+    .panel-logo em { color: var(--gold); font-style: italic; }
+    .panel-logo .badge { font-family: 'DM Mono', monospace; font-size: 0.58rem; background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 2px 8px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
+    .panel-right { display: flex; gap: 10px; align-items: center; }
+    .header-home-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.68rem; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: var(--transition); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+    .header-home-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .logout-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.68rem; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: var(--transition); }
+    .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* TABS */
+    .tab-bar { background: var(--bg-2); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; gap: 0; }
+    .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.75rem; padding: 14px 20px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 7px; }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-badge { background: var(--accent); color: #fff; font-size: 0.55rem; font-weight: 700; padding: 1px 5px; border-radius: 10px; min-width: 16px; text-align: center; display: none; }
+    .tab-badge.visible { display: inline-block; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .panel-body { max-width: 920px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+    .section-head-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; }
+    .section-head-title em { color: var(--gold); font-style: italic; }
+
+    .stats-strip { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .stat-pill { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text-dim); }
+    .stat-pill strong { color: var(--gold); font-size: 1.1rem; display: block; }
+
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+    .toolbar-search { flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.8rem; padding: 9px 14px; outline: none; transition: var(--transition); }
+    .toolbar-search:focus { border-color: var(--gold); }
+    .filt-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.68rem; padding: 7px 14px; border-radius: 20px; cursor: pointer; transition: var(--transition); }
+    .filt-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .filt-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+    /* QUOTE CARDS */
+    .quotes-list { display: flex; flex-direction: column; gap: 12px; }
+    .q-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: var(--transition); }
+    .q-card:hover { border-color: rgba(255,255,255,0.12); }
+    .q-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .q-card-left { flex: 1; min-width: 0; }
+    .q-text { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-style: italic; color: var(--text); line-height: 1.6; margin-bottom: 6px; white-space: pre-wrap; word-break: break-word; }
+    .q-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .q-author { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--gold); }
+    .q-tag { font-family: 'DM Mono', monospace; font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 20px; color: var(--text-dim); }
+    .q-date { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); }
+    .q-likes { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
+    .q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .q-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 5px 11px; border-radius: 6px; cursor: pointer; transition: var(--transition); white-space: nowrap; }
+    .q-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .q-btn.del:hover { border-color: var(--accent); color: var(--accent); }
+    .color-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+    /* EDIT FORM */
+    .q-edit-form { display: none; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+    .q-edit-form.open { display: block; }
+    .edit-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .edit-input, .edit-textarea, .edit-select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.8rem; padding: 9px 12px; outline: none; transition: var(--transition); flex: 1; }
+    .edit-input:focus, .edit-textarea:focus, .edit-select:focus { border-color: var(--gold); }
+    .edit-textarea { width: 100%; resize: vertical; min-height: 80px; margin-bottom: 6px; font-family: 'Lato', sans-serif; font-size: 0.88rem; white-space: pre-wrap; }
+    .edit-char { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-faint); text-align: right; margin-bottom: 10px; }
+    .edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .edit-save { background: var(--gold); color: #1a1200; border: none; border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; padding: 8px 18px; cursor: pointer; transition: var(--transition); }
+    .edit-save:hover { opacity: 0.88; }
+    .edit-cancel { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.72rem; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: var(--transition); }
+    .edit-cancel:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ADD FORM */
+    .add-quote-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; }
+    .add-quote-title { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--gold); margin-bottom: 0; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
+    .add-quote-body { display: none; margin-top: 16px; }
+    .add-quote-body.open { display: block; }
+
+    /* SUGGESTION CARDS */
+    .suggestions-list { display: flex; flex-direction: column; gap: 12px; }
+    .s-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px; transition: var(--transition); }
+    .s-card.read { opacity: 0.42; }
+    .s-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 12px; flex-wrap: wrap; }
+    .s-nick { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--gold); }
+    .s-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .s-type { font-family: 'DM Mono', monospace; font-size: 0.6rem; border: 1px solid rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 20px; color: var(--text-dim); }
+    .s-date { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); }
+    .s-message { font-size: 0.9rem; line-height: 1.65; color: var(--text); margin-bottom: 14px; white-space: pre-wrap; }
+    .s-actions { display: flex; gap: 8px; }
+    .s-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 5px 11px; border-radius: 6px; cursor: pointer; transition: var(--transition); }
+    .s-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .s-btn.read-btn.active { border-color: var(--green); color: var(--green); }
+    .s-btn.del-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* SETTINGS */
+    .settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+    .settings-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .settings-desc { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 18px; line-height: 1.7; }
+    .settings-label { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 6px; display: block; }
+    .settings-input { width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.85rem; padding: 11px 14px; outline: none; transition: var(--transition); margin-bottom: 12px; letter-spacing: 0.05em; }
+    .settings-input:focus { border-color: var(--gold); }
+    .settings-btn { background: var(--gold); color: #1a1200; border: none; border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 0.78rem; font-weight: 500; padding: 11px 24px; cursor: pointer; transition: var(--transition); }
+    .settings-btn:hover { opacity: 0.88; } .settings-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .settings-feedback { font-family: 'DM Mono', monospace; font-size: 0.72rem; margin-top: 10px; min-height: 18px; }
+    .settings-feedback.ok { color: var(--green); }
+    .settings-feedback.err { color: var(--accent); }
+    .danger-btn { background: none; border: 1px solid rgba(232,115,90,0.35); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 0.75rem; padding: 10px 20px; border-radius: var(--radius); cursor: pointer; transition: var(--transition); }
+    .danger-btn:hover { background: rgba(232,115,90,0.1); border-color: var(--accent); }
+
+    /* EMPTY / LOADING */
+    .empty-panel { text-align: center; padding: 64px 20px; font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--text-faint); line-height: 2.6; }
+    .spinner { width: 28px; height: 28px; border: 2px solid rgba(201,168,76,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.78rem; padding: 11px 22px; border-radius: var(--radius); box-shadow: var(--shadow); z-index: 9999; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      .panel-header { padding: 0 16px; }
+      .tab-bar { padding: 0 8px; overflow-x: auto; }
+      .tab-btn { padding: 12px 12px; font-size: 0.68rem; }
+      .panel-body { padding: 20px 16px 60px; }
+      .q-card-header { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="login-logo-text">Głosy<em>Świata</em></span>
+      <span class="login-badge">ADMIN</span>
+    </div>
+    <div class="login-title">Panel <span style="color:var(--gold);font-style:italic;">admina</span></div>
+    <div class="login-sub">Wpisz hasło administratora by kontynuować</div>
+    <input type="password" id="password-input" class="login-input" placeholder="Hasło…" autocomplete="current-password" />
+    <button class="login-btn" id="login-btn">Zaloguj się</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="setup-hint" id="setup-hint"></div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="panel">
+  <header class="panel-header">
+    <div class="panel-logo">Głosy<em>Świata</em><span class="badge">ADMIN</span></div>
+    <div class="panel-right">
+      <a href="index.html" class="header-home-btn">← Strona główna</a>
+      <button class="logout-btn" id="logout-btn">Wyloguj</button>
+    </div>
+  </header>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="quotes">📝 Cytaty</button>
+    <button class="tab-btn" data-tab="suggestions">💬 Sugestie <span class="tab-badge" id="sugg-badge"></span></button>
+    <button class="tab-btn" data-tab="settings">⚙ Ustawienia</button>
+  </nav>
+
+  <!-- TAB QUOTES -->
+  <div class="tab-content active" id="tab-quotes">
+    <div class="panel-body">
+      <div class="section-head"><div class="section-head-title">Zarządzaj <em>cytatami</em></div></div>
+      <div class="stats-strip">
+        <div class="stat-pill"><strong id="stat-total">—</strong>łącznie</div>
+        <div class="stat-pill"><strong id="stat-likes">—</strong>polubień</div>
+        <div class="stat-pill"><strong id="stat-tags">—</strong>kategorii</div>
+      </div>
+      <div class="add-quote-section">
+        <div class="add-quote-title" id="add-toggle"><span id="add-arrow">▶</span> Dodaj nowy cytat</div>
+        <div class="add-quote-body" id="add-quote-body">
+          <div class="edit-row">
+            <input type="text" class="edit-input" id="new-author" placeholder="Autor / pseudonim" maxlength="60" />
+            <select class="edit-select" id="new-tag">
+              <option value="ogólne">ogólne</option><option value="motywacja">motywacja</option>
+              <option value="miłość">miłość</option><option value="mądrość">mądrość</option>
+              <option value="humor">humor</option><option value="filozofia">filozofia</option>
+            </select>
+            <select class="edit-select" id="new-color">
+              <option value="ink">ink</option><option value="wine">wine</option><option value="forest">forest</option>
+              <option value="ocean">ocean</option><option value="dusk">dusk</option><option value="cream">cream</option>
+              <option value="rose">rose</option><option value="ember">ember</option><option value="sage">sage</option>
+              <option value="obsidian">obsidian</option><option value="abyss">abyss</option>
+              <option value="storm">storm</option><option value="void">void</option>
+            </select>
+          </div>
+          <textarea class="edit-textarea" id="new-text" placeholder="Treść cytatu… (Enter = nowa linia, będzie widoczna na stronie)" maxlength="280" rows="3"></textarea>
+          <div class="edit-char" id="new-char">0 / 280</div>
+          <div class="edit-actions"><button class="edit-save" id="add-quote-btn">＋ Opublikuj cytat</button></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input type="text" class="toolbar-search" id="q-search" placeholder="Szukaj cytatu lub autora…" />
+        <button class="filt-btn active" data-qf="wszystkie">Wszystkie</button>
+        <button class="filt-btn" data-qf="ogólne">ogólne</button>
+        <button class="filt-btn" data-qf="motywacja">motywacja</button>
+        <button class="filt-btn" data-qf="miłość">miłość</button>
+        <button class="filt-btn" data-qf="mądrość">mądrość</button>
+        <button class="filt-btn" data-qf="humor">humor</button>
+        <button class="filt-btn" data-qf="filozofia">filozofia</button>
+      </div>
+      <div class="quotes-list" id="quotes-list">
+        <div class="empty-panel"><div class="spinner"></div>Ładowanie cytatów…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB SUGGESTIONS -->
+  <div class="tab-content" id="tab-suggestions">
+    <div class="panel-body">
+      <div class="section-head"><div class="section-head-title">Sugestie <em>użytkowników</em></div></div>
+      <div class="stats-strip">
+        <div class="stat-pill"><strong id="s-stat-total">—</strong>łącznie</div>
+        <div class="stat-pill"><strong id="s-stat-unread">—</strong>nieprzeczytanych</div>
+      </div>
+      <div class="toolbar">
+        <button class="filt-btn active" data-sf="wszystkie">Wszystkie</button>
+        <button class="filt-btn" data-sf="nieprzeczytane">Nieprzeczytane</button>
+        <button class="filt-btn" data-sf="pomysł">pomysł</button>
+        <button class="filt-btn" data-sf="kolor">kolor</button>
+        <button class="filt-btn" data-sf="kategoria">kategoria</button>
+        <button class="filt-btn" data-sf="błąd">błąd</button>
+        <button class="filt-btn" data-sf="inne">inne</button>
+      </div>
+      <div class="suggestions-list" id="suggestions-list">
+        <div class="empty-panel"><div class="spinner"></div>Ładowanie sugestii…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB SETTINGS -->
+  <div class="tab-content" id="tab-settings">
+    <div class="panel-body">
+      <div class="section-head"><div class="section-head-title">Ustawienia <em>panelu</em></div></div>
+      <div class="settings-section">
+        <div class="settings-title">Zmiana hasła</div>
+        <div class="settings-desc">Hasło jest przechowywane jako hash SHA-256 w Firebase.<br/>Nie jest nigdzie zapisywane w formie tekstowej.</div>
+        <label class="settings-label" for="s-cur-pwd">Aktualne hasło</label>
+        <input type="password" class="settings-input" id="s-cur-pwd" placeholder="Wpisz aktualne hasło…" />
+        <label class="settings-label" for="s-new-pwd">Nowe hasło</label>
+        <input type="password" class="settings-input" id="s-new-pwd" placeholder="Wpisz nowe hasło…" />
+        <label class="settings-label" for="s-new-pwd2">Powtórz nowe hasło</label>
+        <input type="password" class="settings-input" id="s-new-pwd2" placeholder="Powtórz nowe hasło…" />
+        <button class="settings-btn" id="change-pwd-btn">Zmień hasło</button>
+        <div class="settings-feedback" id="pwd-feedback"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title" style="color:var(--accent);">Strefa niebezpieczna</div>
+        <div class="settings-desc">Poniższe akcje są nieodwracalne. Używaj z ostrożnością.</div>
+        <button class="danger-btn" id="delete-read-sugg-btn">🗑 Usuń wszystkie przeczytane sugestie</button>
+        <div class="settings-feedback" id="danger-feedback"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Informacje</div>
+        <div class="settings-desc" style="margin-bottom:0;">Panel admina — Głosy Świata<br/>Baza danych: Firebase Realtime Database<br/>Autoryzacja: SHA-256 hash<br/><span id="firebase-info" style="color:var(--text-faint);">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const FIREBASE_URL = "https://glosy-swiata-default-rtdb.europe-west1.firebasedatabase.app";
+  const configUrl = () => `${FIREBASE_URL}/config/adminHash.json`;
+  const quotesUrl = (p="") => `${FIREBASE_URL}/quotes${p}.json`;
+  const likesUrl  = () => `${FIREBASE_URL}/likes.json`;
+  const sugUrl    = (p="") => `${FIREBASE_URL}/sugestie${p}.json`;
+
+  let quotes = [], suggestions = [];
+  let qFilter = "wszystkie", qSearch = "", sFilter = "wszystkie";
+
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const res = await fetch(configUrl());
+      const data = await res.json();
+      if (!data) document.getElementById("setup-hint").innerHTML =
+        `Brak hasła w bazie. Ustaw je w konsoli:<br><code style="color:var(--gold)">setAdminPassword("twoje_haslo")</code>`;
+    } catch(e) {}
+
+    document.getElementById("login-btn").addEventListener("click", tryLogin);
+    document.getElementById("password-input").addEventListener("keydown", e => { if(e.key==="Enter") tryLogin(); });
+    document.getElementById("logout-btn").addEventListener("click", logout);
+    document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+    document.querySelectorAll("[data-qf]").forEach(btn => btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-qf]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); qFilter=btn.dataset.qf; renderQuotes();
+    }));
+    document.getElementById("q-search").addEventListener("input", e => { qSearch=e.target.value; renderQuotes(); });
+    document.querySelectorAll("[data-sf]").forEach(btn => btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-sf]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); sFilter=btn.dataset.sf; renderSuggestions();
+    }));
+    document.getElementById("add-toggle").addEventListener("click", () => {
+      const body=document.getElementById("add-quote-body"), arrow=document.getElementById("add-arrow");
+      const open=body.classList.toggle("open"); arrow.textContent=open?"▼":"▶";
+    });
+    document.getElementById("new-text").addEventListener("input", e => {
+      document.getElementById("new-char").textContent=`${e.target.value.length} / 280`;
+    });
+    document.getElementById("add-quote-btn").addEventListener("click", adminAddQuote);
+    document.getElementById("change-pwd-btn").addEventListener("click", changePassword);
+    document.getElementById("delete-read-sugg-btn").addEventListener("click", deleteReadSuggestions);
+    document.getElementById("firebase-info").textContent = FIREBASE_URL;
+
+    window.setAdminPassword = async function(pwd) {
+      const hash = await sha256(pwd);
+      const res  = await fetch(`${FIREBASE_URL}/config/adminHash.json`, {
+        method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(hash)
+      });
+      if(res.ok) console.log("✓ Hasło ustawione pomyślnie.");
+      else console.error("Błąd:", await res.text());
+    };
+  });
+
+  async function tryLogin() {
+    const pwd=document.getElementById("password-input").value; if(!pwd) return;
+    const btn=document.getElementById("login-btn"); btn.textContent="Sprawdzam…"; btn.disabled=true;
+    try {
+      const [hash,storedRes]=await Promise.all([sha256(pwd),fetch(configUrl())]);
+      const stored=await storedRes.json();
+      if(stored && hash===stored) { showPanel(); }
+      else { document.getElementById("login-error").textContent="Nieprawidłowe hasło."; document.getElementById("password-input").value=""; }
+    } catch(e) { document.getElementById("login-error").textContent="Błąd połączenia: "+e.message; }
+    btn.textContent="Zaloguj się"; btn.disabled=false;
+  }
+
+  function logout() {
+    document.getElementById("panel").style.display="none";
+    document.getElementById("login-wrap").style.display="flex";
+    document.getElementById("password-input").value="";
+    quotes=[]; suggestions=[];
+  }
+
+  async function showPanel() {
+    document.getElementById("login-wrap").style.display="none";
+    document.getElementById("panel").style.display="block";
+    await Promise.all([loadQuotes(), loadSuggestions()]);
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    document.querySelector(`[data-tab="${name}"]`).classList.add("active");
+    document.getElementById(`tab-${name}`).classList.add("active");
+  }
+
+  /* ── QUOTES ── */
+  async function loadQuotes() {
+    try {
+      const [qRes,lRes]=await Promise.all([fetch(quotesUrl()),fetch(likesUrl())]);
+      const qData=await qRes.json(), lData=lRes.ok?await lRes.json():{}, lMap=lData||{};
+      quotes=qData?Object.values(qData).map(q=>({...q,likes:lMap[q.id]||0})).sort((a,b)=>new Date(b.date)-new Date(a.date)):[];
+      renderQuotes();
+    } catch(e) { document.getElementById("quotes-list").innerHTML=`<div class="empty-panel">Błąd ładowania: ${esc(e.message)}</div>`; }
+  }
+
+  function renderQuotes() {
+    const list=document.getElementById("quotes-list");
+    let filtered=[...quotes];
+    if(qFilter!=="wszystkie") filtered=filtered.filter(q=>q.tag===qFilter);
+    if(qSearch.trim()){const s=qSearch.toLowerCase();filtered=filtered.filter(q=>q.text.toLowerCase().includes(s)||(q.author||"").toLowerCase().includes(s));}
+    document.getElementById("stat-total").textContent=quotes.length;
+    document.getElementById("stat-likes").textContent=quotes.reduce((s,q)=>s+(q.likes||0),0);
+    document.getElementById("stat-tags").textContent=[...new Set(quotes.map(q=>q.tag))].length;
+    if(!filtered.length){list.innerHTML=`<div class="empty-panel">Brak cytatów${qFilter!=="wszystkie"?` w kategorii „${esc(qFilter)}"`:""}.${qSearch?" Zmień wyszukiwanie.":""}</div>`;return;}
+    list.innerHTML=""; filtered.forEach(q=>list.appendChild(buildQuoteCard(q)));
+  }
+
+  const COLOR_MAP={ink:"#1a1a2e",wine:"#4a0e0e",forest:"#0d2b1e",ocean:"#0a1f3a",dusk:"#2a1a3e",cream:"#f5f0e8",rose:"#3d1525",ember:"#3a1f0a",sage:"#1e2a22",obsidian:"#1f0c0c",abyss:"#091a1f",storm:"#111820",void:"#141418"};
+
+  function buildQuoteCard(q) {
+    const card=document.createElement("div"); card.className="q-card"; card.dataset.id=q.id;
+    const dot=COLOR_MAP[q.color]||"#1a1a2e";
+    card.innerHTML=`
+      <div class="q-card-header">
+        <div class="q-card-left">
+          <div class="q-text">${esc(q.text)}</div>
+          <div class="q-meta">
+            <span class="q-author">— ${esc(q.author||"?")}</span>
+            <span class="q-tag">${esc(q.tag)}</span>
+            <span class="q-date">${q.date||""}</span>
+            <span class="q-likes">♡ ${q.likes||0}</span>
+            <span class="q-tag" style="border-color:${dot}"><span class="color-dot" style="background:${dot}"></span>${esc(q.color||"ink")}</span>
+          </div>
+        </div>
+        <div class="q-actions">
+          <button class="q-btn edit-btn" data-id="${q.id}">✏ Edytuj</button>
+          <button class="q-btn del" data-id="${q.id}">✕ Usuń</button>
+        </div>
+      </div>
+      <div class="q-edit-form" id="edit-${q.id}">
+        <div class="edit-row">
+          <input type="text" class="edit-input" id="ei-author-${q.id}" value="${esc(q.author||"")}" placeholder="Autor" maxlength="60"/>
+          <select class="edit-select" id="ei-tag-${q.id}">${["ogólne","motywacja","miłość","mądrość","humor","filozofia"].map(t=>`<option value="${t}"${q.tag===t?" selected":""}>${t}</option>`).join("")}</select>
+          <select class="edit-select" id="ei-color-${q.id}">${Object.keys(COLOR_MAP).map(c=>`<option value="${c}"${q.color===c?" selected":""}>${c}</option>`).join("")}</select>
+        </div>
+        <textarea class="edit-textarea" id="ei-text-${q.id}" maxlength="280">${esc(q.text)}</textarea>
+        <div class="edit-char" id="ei-char-${q.id}">${(q.text||"").length} / 280</div>
+        <div class="edit-actions">
+          <button class="edit-cancel" data-id="${q.id}">Anuluj</button>
+          <button class="edit-save" data-id="${q.id}">Zapisz zmiany</button>
+        </div>
+      </div>`;
+    card.querySelector(".edit-btn").addEventListener("click",()=>toggleEdit(q.id));
+    card.querySelector(".del").addEventListener("click",()=>deleteQuote(q.id));
+    card.querySelector(".edit-cancel").addEventListener("click",()=>toggleEdit(q.id,false));
+    card.querySelector(".edit-save").addEventListener("click",()=>saveQuote(q.id));
+    const ta=card.querySelector(`#ei-text-${q.id}`), ch=card.querySelector(`#ei-char-${q.id}`);
+    ta.addEventListener("input",()=>{ch.textContent=`${ta.value.length} / 280`;});
+    return card;
+  }
+
+  function toggleEdit(id,force){const f=document.getElementById(`edit-${id}`);typeof force==="boolean"?f.classList.toggle("open",force):f.classList.toggle("open");}
+
+  async function saveQuote(id) {
+    const q=quotes.find(x=>x.id===id); if(!q) return;
+    const newText=document.getElementById(`ei-text-${id}`).value.trim();
+    const newAuthor=document.getElementById(`ei-author-${id}`).value.trim();
+    const newTag=document.getElementById(`ei-tag-${id}`).value;
+    const newColor=document.getElementById(`ei-color-${id}`).value;
+    if(!newText){showToast("Treść cytatu nie może być pusta!");return;}
+    const btn=document.querySelector(`#edit-${id} .edit-save`); btn.textContent="Zapisuję…"; btn.disabled=true;
+    const payload={id:q.id,text:newText,author:newAuthor,tag:newTag,color:newColor,date:q.date};
+    try {
+      const res=await fetch(quotesUrl(`/${id}`),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      Object.assign(q,{text:newText,author:newAuthor,tag:newTag,color:newColor});
+      renderQuotes(); showToast("✓ Cytat zaktualizowany!");
+    } catch(e) { showToast("Błąd: "+e.message); btn.textContent="Zapisz zmiany"; btn.disabled=false; }
+  }
+
+  async function deleteQuote(id) {
+    if(!confirm("Na pewno usunąć ten cytat? Tej operacji nie można cofnąć.")) return;
+    try {
+      const res=await fetch(quotesUrl(`/${id}`),{method:"DELETE"});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      quotes=quotes.filter(q=>q.id!==id); renderQuotes(); showToast("✓ Cytat usunięty.");
+    } catch(e) { showToast("Błąd usuwania: "+e.message); }
+  }
+
+  async function adminAddQuote() {
+    const text=document.getElementById("new-text").value.trim();
+    const author=document.getElementById("new-author").value.trim();
+    const tag=document.getElementById("new-tag").value;
+    const color=document.getElementById("new-color").value;
+    if(!text){showToast("Wpisz treść cytatu!");return;}
+    if(!author){showToast("Wpisz autora!");return;}
+    const btn=document.getElementById("add-quote-btn"); btn.textContent="Zapisuję…"; btn.disabled=true;
+    const q={id:"q-"+Date.now(),text,author,tag,color,date:new Date().toISOString().slice(0,10)};
+    try {
+      const res=await fetch(quotesUrl(`/${q.id}`),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(q)});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      quotes.unshift({...q,likes:0});
+      document.getElementById("new-text").value=""; document.getElementById("new-author").value=""; document.getElementById("new-char").textContent="0 / 280";
+      renderQuotes(); showToast("✓ Cytat dodany!");
+    } catch(e) { showToast("Błąd: "+e.message); }
+    btn.textContent="＋ Opublikuj cytat"; btn.disabled=false;
+  }
+
+  /* ── SUGGESTIONS ── */
+  async function loadSuggestions() {
+    try {
+      const res=await fetch(sugUrl()); const data=await res.json();
+      suggestions=data?Object.values(data).sort((a,b)=>new Date(b.date)-new Date(a.date)):[];
+      renderSuggestions(); updateSuggBadge();
+    } catch(e) { document.getElementById("suggestions-list").innerHTML=`<div class="empty-panel">Błąd ładowania: ${esc(e.message)}</div>`; }
+  }
+
+  function updateSuggBadge(){const u=suggestions.filter(s=>!s.read).length,badge=document.getElementById("sugg-badge");badge.textContent=u;badge.classList.toggle("visible",u>0);}
+
+  function renderSuggestions(){
+    const list=document.getElementById("suggestions-list");
+    const total=suggestions.length,unread=suggestions.filter(s=>!s.read).length;
+    document.getElementById("s-stat-total").textContent=total; document.getElementById("s-stat-unread").textContent=unread;
+    let filtered=[...suggestions];
+    if(sFilter==="nieprzeczytane") filtered=filtered.filter(s=>!s.read);
+    else if(sFilter!=="wszystkie") filtered=filtered.filter(s=>s.type===sFilter);
+    if(!filtered.length){list.innerHTML=`<div class="empty-panel">Brak sugestii${sFilter!=="wszystkie"?` w kategorii „${esc(sFilter)}"`:""}.${sFilter==="nieprzeczytane"?" Wszystko przeczytane 🎉":""}</div>`;return;}
+    list.innerHTML=""; filtered.forEach(s=>list.appendChild(buildSuggCard(s)));
+  }
+
+  function buildSuggCard(s){
+    const card=document.createElement("div"); card.className=`s-card${s.read?" read":""}`;
+    card.innerHTML=`<div class="s-card-top"><span class="s-nick">${esc(s.nick||"Anonim")}</span><div class="s-meta"><span class="s-type">${esc(s.type)}</span><span class="s-date">${s.date||""}</span></div></div><p class="s-message">${esc(s.message)}</p><div class="s-actions"><button class="s-btn read-btn${s.read?" active":""}" data-id="${s.id}">${s.read?"✓ przeczytane":"oznacz jako przeczytane"}</button><button class="s-btn del-btn" data-id="${s.id}">usuń</button></div>`;
+    card.querySelector(".read-btn").addEventListener("click",()=>toggleReadSugg(s.id));
+    card.querySelector(".del-btn").addEventListener("click",()=>deleteSuggestion(s.id));
+    return card;
+  }
+
+  async function toggleReadSugg(id){
+    const s=suggestions.find(x=>x.id===id); if(!s) return; s.read=!s.read;
+    try{await fetch(`${FIREBASE_URL}/sugestie/${id}/read.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(s.read)});}catch(e){}
+    renderSuggestions(); updateSuggBadge();
+  }
+
+  async function deleteSuggestion(id){
+    if(!confirm("Usunąć tę sugestię?")) return;
+    try{
+      const res=await fetch(sugUrl(`/${id}`),{method:"DELETE"});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      suggestions=suggestions.filter(x=>x.id!==id); renderSuggestions(); updateSuggBadge(); showToast("✓ Sugestia usunięta.");
+    }catch(e){showToast("Błąd usuwania: "+e.message);}
+  }
+
+  /* ── SETTINGS ── */
+  async function changePassword(){
+    const cur=document.getElementById("s-cur-pwd").value, np1=document.getElementById("s-new-pwd").value, np2=document.getElementById("s-new-pwd2").value;
+    const fb=document.getElementById("pwd-feedback"); fb.className="settings-feedback";
+    if(!cur||!np1||!np2){fb.textContent="Wypełnij wszystkie pola.";fb.classList.add("err");return;}
+    if(np1!==np2){fb.textContent="Nowe hasła się nie zgadzają.";fb.classList.add("err");return;}
+    if(np1.length<6){fb.textContent="Hasło musi mieć co najmniej 6 znaków.";fb.classList.add("err");return;}
+    const btn=document.getElementById("change-pwd-btn"); btn.textContent="Weryfikuję…"; btn.disabled=true;
+    try{
+      const [curHash,storedRes]=await Promise.all([sha256(cur),fetch(configUrl())]);
+      const stored=await storedRes.json();
+      if(!stored||curHash!==stored){fb.textContent="Aktualne hasło jest nieprawidłowe.";fb.classList.add("err");btn.textContent="Zmień hasło";btn.disabled=false;return;}
+      const newHash=await sha256(np1);
+      const res=await fetch(`${FIREBASE_URL}/config/adminHash.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(newHash)});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      fb.textContent="✓ Hasło zmienione pomyślnie!"; fb.classList.add("ok");
+      document.getElementById("s-cur-pwd").value=""; document.getElementById("s-new-pwd").value=""; document.getElementById("s-new-pwd2").value="";
+    }catch(e){fb.textContent="Błąd: "+e.message;fb.classList.add("err");}
+    btn.textContent="Zmień hasło"; btn.disabled=false;
+  }
+
+  async function deleteReadSuggestions(){
+    const read=suggestions.filter(s=>s.read);
+    if(!read.length){showToast("Brak przeczytanych sugestii do usunięcia.");return;}
+    if(!confirm(`Usunąć ${read.length} przeczytanych sugestii? Tej operacji nie można cofnąć.`)) return;
+    const fb=document.getElementById("danger-feedback"); fb.className="settings-feedback"; fb.textContent="Usuwam…";
+    try{
+      await Promise.all(read.map(s=>fetch(sugUrl(`/${s.id}`),{method:"DELETE"})));
+      suggestions=suggestions.filter(s=>!s.read); renderSuggestions(); updateSuggBadge();
+      fb.textContent=`✓ Usunięto ${read.length} sugestii.`; fb.classList.add("ok");
+    }catch(e){fb.textContent="Błąd: "+e.message;fb.classList.add("err");}
+  }
+
+  /* ── UTILS ── */
+  function esc(str){return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  let _tt; function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove("show"),2800);}
+</script>
+</body>
+</html>
