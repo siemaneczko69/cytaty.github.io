@@ -40,9 +40,3 @@
 | CSV    | Eksport tabelaryczny |
 | TXT    | Eksport tekstowy |
 | Fonts  | Google Fonts (Playfair Display, DM Mono, Lato) |
-
-## Uruchomienie
-
-Otwórz `index.html` w przeglądarce lub wgraj pliki na hosting statyczny.
-
-> Dane przechowywane są lokalnie w `localStorage` przeglądarki.
