@@ -20,8 +20,9 @@ const DEFAULT_QUOTE = {
 };
 
 let quotes        = [];
-let currentFilter = "all";
-let currentSearch = "";
+let currentFilter   = "all";
+let currentSearch   = "";
+let currentCategory = "";
 let selectedTag   = "ogólne";
 let selectedColor = "ink";
 
@@ -133,8 +134,8 @@ function renderQuotes() {
   const grid  = document.getElementById("quotes-grid");
   const empty = document.getElementById("empty-state");
   let filtered = [...quotes];
-  if (currentFilter === "moje")      filtered = filtered.filter(q => q.mine);
   if (currentFilter === "popularne") filtered = [...filtered].sort((a,b) => b.likes - a.likes);
+  if (currentCategory) filtered = filtered.filter(q => q.tag === currentCategory);
   if (currentSearch.trim()) {
     const s = currentSearch.toLowerCase();
     filtered = filtered.filter(q =>
@@ -326,10 +327,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }));
   document.getElementById("search-input").addEventListener("input", e => { currentSearch=e.target.value; renderQuotes(); });
-  document.querySelectorAll(".filter-btn").forEach(btn => btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active"); currentFilter=btn.dataset.filter; renderQuotes();
-  }));
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); currentFilter=btn.dataset.filter; renderQuotes();
+    });
+  });
+  document.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); currentCategory=btn.dataset.cat; renderQuotes();
+    });
+  });
   document.querySelectorAll(".tag-option").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll(".tag-option").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active"); selectedTag=btn.dataset.tag; updatePreview();
