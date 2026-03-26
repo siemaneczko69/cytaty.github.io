@@ -25,6 +25,7 @@
       <nav class="nav">
         <button class="nav-btn active" data-view="feed">Cytaty</button>
         <button class="nav-btn" data-view="add">+ Dodaj</button>
+        <button class="nav-btn" data-view="contact">Kontakt</button>
         <button class="nav-btn" data-view="about">Info</button>
       </nav>
     </div>
@@ -127,6 +128,44 @@
               <div class="quote-author-preview">— <span id="preview-author">Autor</span></div>
               <span class="quote-tag-preview" id="preview-tag">ogólne</span>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT VIEW -->
+    <section class="view" id="view-contact">
+      <div class="add-container">
+        <h2 class="section-title">Kontakt</h2>
+        <div class="form-card">
+          <p style="font-size:0.88rem;color:var(--text-dim);margin-bottom:24px;line-height:1.6;">
+            Masz pomysł na nowy kolor, kategorię, funkcję albo widzisz błąd? Napisz — czytam każdą wiadomość.
+          </p>
+
+          <div class="form-group">
+            <label for="contact-nick">Nick / imię <span style="color:var(--text-faint);font-size:0.75rem;">(opcjonalnie)</span></label>
+            <input type="text" id="contact-nick" class="form-input" placeholder="np. Anonim" maxlength="60" />
+          </div>
+
+          <div class="form-group">
+            <label>Typ sugestii</label>
+            <div class="tag-selector" id="suggestion-type-selector">
+              <button class="tag-option active" data-type="pomysł">pomysł</button>
+              <button class="tag-option" data-type="kolor">kolor</button>
+              <button class="tag-option" data-type="kategoria">kategoria</button>
+              <button class="tag-option" data-type="błąd">błąd</button>
+              <button class="tag-option" data-type="inne">inne</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="contact-message">Wiadomość <span class="char-count" id="contact-char-count">0 / 500</span></label>
+            <textarea id="contact-message" class="form-textarea" placeholder="Napisz co masz na myśli…" maxlength="500" rows="5"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-secondary" id="clear-contact-btn">Wyczyść</button>
+            <button class="btn-primary" id="submit-contact-btn">Wyślij sugestię</button>
           </div>
         </div>
       </div>

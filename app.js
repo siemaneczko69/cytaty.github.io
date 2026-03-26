@@ -31,6 +31,7 @@ let selectedColor = "ink";
 function quotesUrl(path="") { return `${FIREBASE_URL}/quotes${path}.json`; }
 function likesUrl(id)       { return `${FIREBASE_URL}/likes/${id}.json`; }
 function allLikesUrl()      { return `${FIREBASE_URL}/likes.json`; }
+function suggestionsUrl(path="") { return `${FIREBASE_URL}/sugestie${path}.json`; }
 
 async function fetchQuotes() {
   if (FIREBASE_URL === "WKLEJ_TUTAJ_URL_FIREBASE") { showConfigWarning(); return []; }
@@ -286,6 +287,45 @@ function closeModal() {
   document.body.style.overflow = "";
 }
 
+// ─── Sugestie ───
+let selectedSuggestionType = "pomysł";
+
+async function submitSuggestion() {
+  const message = document.getElementById("contact-message").value.trim();
+  const nick    = document.getElementById("contact-nick").value.trim();
+  if (!message) { showToast("Wpisz treść wiadomości!"); return; }
+
+  const btn = document.getElementById("submit-contact-btn");
+  btn.disabled = true; btn.textContent = "Wysyłam…";
+
+  const s = {
+    id:      "s-" + Date.now(),
+    nick:    nick || "Anonim",
+    type:    selectedSuggestionType,
+    message,
+    date:    new Date().toISOString().slice(0,10),
+    read:    false
+  };
+
+  try {
+    const res = await fetch(suggestionsUrl(`/${s.id}`), {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(s)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    document.getElementById("contact-message").value = "";
+    document.getElementById("contact-nick").value = "";
+    document.getElementById("contact-char-count").textContent = "0 / 500";
+    showToast("✓ Sugestia wysłana, dzięki!");
+    switchView("feed");
+  } catch(e) {
+    showToast("Błąd: " + e.message);
+  }
+
+  btn.disabled = false; btn.textContent = "Wyślij sugestię";
+}
+
 // ─── View ───
 function switchView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -438,6 +478,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("export-csv").addEventListener("click",  exportCSV);
   document.getElementById("export-xml").addEventListener("click",  exportXML);
   document.getElementById("export-txt").addEventListener("click",  exportTXT);
+
+  // Contact / sugestie
+  document.querySelectorAll("#suggestion-type-selector .tag-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#suggestion-type-selector .tag-option").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedSuggestionType = btn.dataset.type;
+    });
+  });
+  document.getElementById("contact-message").addEventListener("input", e => {
+    document.getElementById("contact-char-count").textContent = `${e.target.value.length} / 500`;
+  });
+  document.getElementById("submit-contact-btn").addEventListener("click", submitSuggestion);
+  document.getElementById("clear-contact-btn").addEventListener("click", () => {
+    document.getElementById("contact-message").value = "";
+    document.getElementById("contact-nick").value = "";
+    document.getElementById("contact-char-count").textContent = "0 / 500";
+  });
 
   // Auto-refresh co 30s
   setInterval(async () => {
