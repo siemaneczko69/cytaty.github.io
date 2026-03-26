@@ -37,6 +37,7 @@
       <div class="feed-header">
         <h1 class="feed-title">Głosy <span class="accent">Świata</span></h1>
         <p class="feed-sub">Zbiorowa mądrość jednego miejsca</p>
+        <p class="feed-stats" id="feed-stats"></p>
         <div class="feed-controls">
           <input type="text" id="search-input" class="search-input" placeholder="Szukaj cytatu lub autora…" />
           <div class="filter-row">
@@ -97,15 +98,19 @@
           <div class="form-group">
             <label>Kolor karty</label>
             <div class="color-picker" id="color-picker">
-              <button class="color-swatch active" data-color="ink" style="background:#1a1a2e" title="Ink"></button>
-              <button class="color-swatch" data-color="wine" style="background:#4a0e0e" title="Wine"></button>
-              <button class="color-swatch" data-color="forest" style="background:#0d2b1e" title="Forest"></button>
-              <button class="color-swatch" data-color="ocean" style="background:#0a1f3a" title="Ocean"></button>
-              <button class="color-swatch" data-color="dusk" style="background:#2a1a3e" title="Dusk"></button>
+              <button class="color-swatch active" data-color="ink"      style="background:#1a1a2e" title="Ink"></button>
+              <button class="color-swatch" data-color="wine"     style="background:#4a0e0e" title="Wine"></button>
+              <button class="color-swatch" data-color="forest"   style="background:#0d2b1e" title="Forest"></button>
+              <button class="color-swatch" data-color="ocean"    style="background:#0a1f3a" title="Ocean"></button>
+              <button class="color-swatch" data-color="dusk"     style="background:#2a1a3e" title="Dusk"></button>
               <button class="color-swatch light" data-color="cream" style="background:#f5f0e8" title="Cream"></button>
-              <button class="color-swatch" data-color="rose" style="background:#3d1525" title="Rose"></button>
-              <button class="color-swatch" data-color="ember" style="background:#3a1f0a" title="Ember"></button>
-              <button class="color-swatch" data-color="sage" style="background:#1a2b1a" title="Sage"></button>
+              <button class="color-swatch" data-color="rose"     style="background:#3d1525" title="Rose"></button>
+              <button class="color-swatch" data-color="ember"    style="background:#3a1f0a" title="Ember"></button>
+              <button class="color-swatch" data-color="sage"     style="background:#1e2a22" title="Sage"></button>
+              <button class="color-swatch" data-color="obsidian" style="background:#1f0c0c" title="Obsidian"></button>
+              <button class="color-swatch" data-color="abyss"    style="background:#091a1f" title="Abyss"></button>
+              <button class="color-swatch" data-color="storm"    style="background:#111820" title="Storm"></button>
+              <button class="color-swatch" data-color="void"     style="background:#141418" title="Void"></button>
             </div>
           </div>
 
@@ -179,9 +184,25 @@
       <div class="modal-author" id="modal-author"></div>
       <span class="modal-tag" id="modal-tag"></span>
       <div class="modal-date" id="modal-date"></div>
+      <div class="modal-actions">
+        <button class="btn-modal-action" id="modal-download-btn">⬇ Pobierz grafikę</button>
+        <button class="btn-modal-action" id="modal-copy-btn">⎘ Kopiuj tekst</button>
+      </div>
     </div>
   </div>
 
+  <!-- HIDDEN QUOTE RENDER for image export -->
+  <div id="quote-render-wrap" style="position:fixed;left:-9999px;top:-9999px;width:600px;padding:0;">
+    <div id="quote-render-card" style="width:600px;padding:56px 56px 48px;box-sizing:border-box;font-family:'Playfair Display',serif;position:relative;border-radius:20px;overflow:hidden;">
+      <div style="font-size:5.5rem;line-height:1;color:#c9a84c;opacity:0.4;font-style:italic;margin-bottom:-20px;">&ldquo;</div>
+      <p id="render-text" style="font-size:1.45rem;font-style:italic;line-height:1.7;margin-bottom:24px;"></p>
+      <div id="render-author" style="font-family:'DM Mono',monospace;font-size:0.82rem;opacity:0.6;margin-bottom:16px;"></div>
+      <span id="render-tag" style="font-family:'DM Mono',monospace;font-size:0.65rem;border:1px solid rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px;opacity:0.6;"></span>
+      <div style="margin-top:28px;font-family:'DM Mono',monospace;font-size:0.6rem;opacity:0.3;letter-spacing:0.08em;">GŁOSY ŚWIATA</div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

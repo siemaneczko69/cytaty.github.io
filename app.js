@@ -191,7 +191,20 @@ async function toggleLike(id) {
     saveMyLikes([...myLikes, id]);
   }
   renderQuotes();
+  updateStats();
   await updateLikes(id, q.likes);
+}
+
+
+function updateStats() {
+  const el = document.getElementById("feed-stats");
+  if (!el) return;
+  const total = quotes.length;
+  const likes = quotes.reduce((s, q) => s + (q.likes || 0), 0);
+  if (total === 0) { el.textContent = ""; return; }
+  const qWord = total === 1 ? "cytat" : total < 5 ? "cytaty" : "cytatów";
+  const lWord = likes === 1 ? "polubienie" : likes < 5 ? "polubienia" : "polubień";
+  el.textContent = `${total} ${qWord} · ${likes} ${lWord}`;
 }
 
 async function addQuote() {
@@ -241,11 +254,30 @@ function updatePreview() {
 }
 
 // ─── Modal ───
+let _currentModalQuote = null;
 function openModal(q) {
+  _currentModalQuote = q;
   document.getElementById("modal-text").textContent   = q.text;
   document.getElementById("modal-author").textContent = "— " + q.author;
   document.getElementById("modal-tag").textContent    = q.tag;
   document.getElementById("modal-date").textContent   = q.date ? "Dodano: " + formatDate(q.date) : "";
+  // Populate hidden render card
+  const card = document.getElementById("quote-render-card");
+  const colorMap = {
+    ink:"linear-gradient(135deg,#1a1a2e,#16213e)", wine:"linear-gradient(135deg,#4a0e0e,#2d0a0a)",
+    forest:"linear-gradient(135deg,#0d2b1e,#081a12)", ocean:"linear-gradient(135deg,#0a1f3a,#060f1d)",
+    dusk:"linear-gradient(135deg,#2a1a3e,#180e26)", cream:"linear-gradient(135deg,#f5f0e8,#ede7d7)",
+    rose:"linear-gradient(135deg,#3d1525,#220b15)", ember:"linear-gradient(135deg,#3a1f0a,#1f0e00)",
+    sage:"linear-gradient(135deg,#1e2a22,#101a14)", obsidian:"linear-gradient(135deg,#1f0c0c,#0e0608)",
+    abyss:"linear-gradient(135deg,#091a1f,#040d10)", storm:"linear-gradient(135deg,#111820,#090e15)",
+    void:"linear-gradient(135deg,#141418,#0c0c10)"
+  };
+  const isLight = q.color === "cream";
+  card.style.background = colorMap[q.color] || colorMap.ink;
+  card.style.color = isLight ? "#2a2018" : "#e8e4d8";
+  document.getElementById("render-text").textContent   = q.text;
+  document.getElementById("render-author").textContent = "— " + q.author;
+  document.getElementById("render-tag").textContent    = q.tag;
   document.getElementById("modal-overlay").classList.remove("hidden");
   document.body.style.overflow = "hidden";
 }
@@ -318,12 +350,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   quotes = await fetchQuotes();
   hideLoader();
   renderQuotes();
+  updateStats();
 
   document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => {
     switchView(btn.dataset.view);
     if (btn.dataset.view === "feed") {
       showLoader("Odświeżam…");
-      fetchQuotes().then(q => { quotes=q; hideLoader(); renderQuotes(); });
+      fetchQuotes().then(q => { quotes=q; hideLoader(); renderQuotes(); updateStats(); });
     }
   }));
   document.getElementById("search-input").addEventListener("input", e => { currentSearch=e.target.value; renderQuotes(); });
@@ -359,6 +392,48 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal-overlay").addEventListener("click", e => { if(e.target===e.currentTarget) closeModal(); });
   document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); });
+
+  document.getElementById("modal-download-btn").addEventListener("click", async () => {
+    const card = document.getElementById("quote-render-card");
+    const btn  = document.getElementById("modal-download-btn");
+    btn.textContent = "Generuję…"; btn.disabled = true;
+    try {
+      const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
+      // Apply rounded corners by clipping on a second canvas
+      const radius = 20 * 2; // scale:2
+      const out = document.createElement("canvas");
+      out.width = canvas.width; out.height = canvas.height;
+      const ctx = out.getContext("2d");
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(out.width - radius, 0);
+      ctx.quadraticCurveTo(out.width, 0, out.width, radius);
+      ctx.lineTo(out.width, out.height - radius);
+      ctx.quadraticCurveTo(out.width, out.height, out.width - radius, out.height);
+      ctx.lineTo(radius, out.height);
+      ctx.quadraticCurveTo(0, out.height, 0, out.height - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(canvas, 0, 0);
+      const a = document.createElement("a");
+      a.download = "cytat-glosy-swiata.png";
+      a.href = out.toDataURL("image/png");
+      a.click();
+    } catch(e) { showToast("Błąd generowania obrazka."); }
+    btn.textContent = "⬇ Pobierz grafikę"; btn.disabled = false;
+  });
+
+  document.getElementById("modal-copy-btn").addEventListener("click", () => {
+    if (!_currentModalQuote) return;
+    const q = _currentModalQuote;
+    const text = `„${q.text}" — ${q.author}`;
+    navigator.clipboard.writeText(text).then(
+      () => showToast("✓ Skopiowano do schowka!"),
+      () => showToast("Błąd kopiowania.")
+    );
+  });
   document.getElementById("export-json").addEventListener("click", exportJSON);
   document.getElementById("export-csv").addEventListener("click",  exportCSV);
   document.getElementById("export-xml").addEventListener("click",  exportXML);
@@ -367,7 +442,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Auto-refresh co 30s
   setInterval(async () => {
     if (document.getElementById("view-feed").classList.contains("active")) {
-      quotes = await fetchQuotes(); renderQuotes();
+      quotes = await fetchQuotes(); renderQuotes(); updateStats();
     }
   }, 30_000);
 });

@@ -33,7 +33,11 @@
   --card-cream:  linear-gradient(135deg, #f5f0e8 0%, #ede7d7 100%);
   --card-rose:   linear-gradient(135deg, #3d1525 0%, #220b15 100%);
   --card-ember:  linear-gradient(135deg, #3a1f0a 0%, #1f0e00 100%);
-  --card-sage:   linear-gradient(135deg, #1a2b1a 0%, #0d180d 100%);
+  --card-sage:     linear-gradient(135deg, #1e2a22 0%, #101a14 100%);
+  --card-obsidian: linear-gradient(135deg, #1f0c0c 0%, #0e0608 100%);
+  --card-abyss:    linear-gradient(135deg, #091a1f 0%, #040d10 100%);
+  --card-storm:    linear-gradient(135deg, #111820 0%, #090e15 100%);
+  --card-void:     linear-gradient(135deg, #141418 0%, #0c0c10 100%);
 }
 
 /* ─── Reset & Base ─── */
@@ -123,7 +127,16 @@ body {
   margin-bottom: 12px;
 }
 .accent { color: var(--gold); font-style: italic; }
-.feed-sub { color: var(--text-dim); font-size: 1rem; margin-bottom: 36px; }
+.feed-sub { color: var(--text-dim); font-size: 1rem; margin-bottom: 8px; }
+
+.feed-stats {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--gold);
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+  margin-bottom: 32px;
+}
 
 .feed-controls { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
@@ -197,10 +210,17 @@ body {
 .quote-card[data-color="cream"]  { background: var(--card-cream); color: #2a2018; }
 .quote-card[data-color="rose"]   { background: var(--card-rose); }
 .quote-card[data-color="ember"]  { background: var(--card-ember); }
-.quote-card[data-color="sage"]   { background: var(--card-sage); }
+.quote-card[data-color="sage"]     { background: var(--card-sage); }
+.quote-card[data-color="obsidian"] { background: var(--card-obsidian); }
+.quote-card[data-color="abyss"]    { background: var(--card-abyss); }
+.quote-card[data-color="storm"]    { background: var(--card-storm); }
+.quote-card[data-color="void"]     { background: var(--card-void); }
 .quote-card[data-color="cream"] .quote-meta,
 .quote-card[data-color="cream"] .quote-author-line { color: rgba(42,32,24,0.6); }
 .quote-card[data-color="cream"] .quote-tag { color: rgba(42,32,24,0.5); border-color: rgba(42,32,24,0.2); }
+.quote-card[data-color="cream"] .action-btn { color: rgba(42,32,24,0.55); }
+.quote-card[data-color="cream"] .action-btn:hover { color: #2a2018; background: rgba(42,32,24,0.08); }
+.quote-card[data-color="cream"] .action-btn.liked { color: #b84a2a; }
 
 .quote-mark {
   font-family: 'Playfair Display', serif;
@@ -443,6 +463,21 @@ body {
   font-family: 'DM Mono', monospace; font-size: 0.65rem;
   color: var(--text-faint); margin-top: 18px;
 }
+
+.modal-actions {
+  display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap;
+}
+.btn-modal-action {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-dim); padding: 8px 16px; border-radius: 8px;
+  cursor: pointer; transition: var(--transition); flex: 1;
+}
+.btn-modal-action:hover {
+  border-color: var(--gold); color: var(--gold);
+  background: var(--gold-dim);
+}
+.btn-modal-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 6px; }
