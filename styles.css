@@ -496,3 +496,167 @@ body {
   .header-inner { padding: 0 16px; }
   .nav-btn { padding: 6px 10px; font-size: 0.72rem; }
 }
+
+/* ─── Random mode overlay ─── */
+.random-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(8,8,12,0.97);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 24px;
+  animation: overlayFadeIn 0.3s ease;
+}
+.random-card-wrap {
+  width: 100%; max-width: 560px;
+  position: relative;
+}
+.random-card {
+  border-radius: var(--radius-lg);
+  padding: 48px 44px 40px;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.08);
+  animation: randomCardIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes randomCardIn {
+  from { opacity: 0; transform: scale(0.93) translateY(24px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.random-quote-mark {
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem; line-height: 1;
+  color: var(--gold); opacity: 0.35;
+  font-style: italic; margin-bottom: -16px; display: block;
+}
+.random-text {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.1rem, 3vw, 1.5rem); font-style: italic;
+  line-height: 1.65; margin-bottom: 22px; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+}
+.random-author {
+  font-family: 'DM Mono', monospace; font-size: 0.8rem;
+  color: var(--text-dim); margin-bottom: 10px;
+}
+.random-tag {
+  font-family: 'DM Mono', monospace; font-size: 0.63rem;
+  border: 1px solid rgba(255,255,255,0.15); padding: 3px 10px;
+  border-radius: 20px; color: var(--text-dim); display: inline-block;
+}
+.random-controls {
+  display: flex; gap: 14px; margin-top: 36px; align-items: center; justify-content: center;
+  flex-wrap: wrap;
+}
+.random-next-btn {
+  background: var(--gold); color: #0e0e14;
+  border: none; border-radius: var(--radius);
+  font-family: 'DM Mono', monospace; font-size: 0.82rem; font-weight: 500;
+  padding: 13px 32px; cursor: pointer; transition: var(--transition);
+  letter-spacing: 0.04em;
+}
+.random-next-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.random-like-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.8rem;
+  padding: 12px 20px; border-radius: var(--radius);
+  cursor: pointer; transition: var(--transition);
+  display: flex; align-items: center; gap: 6px;
+}
+.random-like-btn:hover { border-color: #e8735a; color: #e8735a; }
+.random-like-btn.liked { border-color: #e8735a; color: #e8735a; }
+.random-close-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.78rem;
+  padding: 12px 18px; border-radius: var(--radius);
+  cursor: pointer; transition: var(--transition);
+}
+.random-close-btn:hover { border-color: var(--accent); color: var(--accent); }
+.random-counter {
+  font-family: 'DM Mono', monospace; font-size: 0.65rem;
+  color: var(--text-faint); margin-top: 16px; text-align: center;
+}
+
+/* ─── Share URL bar ─── */
+.share-bar {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
+  animation: modalSlideUp 0.25s ease;
+}
+.share-url {
+  flex: 1; font-family: 'DM Mono', monospace; font-size: 0.72rem;
+  color: var(--text-dim); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis;
+}
+.share-copy-btn {
+  background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold); font-family: 'DM Mono', monospace; font-size: 0.68rem;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  transition: var(--transition); white-space: nowrap;
+  flex-shrink: 0;
+}
+.share-copy-btn:hover { background: rgba(201,168,76,0.25); }
+
+/* ─── Comments ─── */
+.comments-section {
+  border-top: 1px solid var(--border);
+  margin-top: 24px; padding-top: 20px;
+}
+.comments-title {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem;
+  color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.comments-list {
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 260px; overflow-y: auto;
+  margin-bottom: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-2) transparent;
+}
+.comment-item {
+  background: var(--bg-2); border-radius: var(--radius);
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+}
+.comment-nick {
+  font-family: 'DM Mono', monospace; font-size: 0.68rem;
+  color: var(--gold); margin-bottom: 4px;
+}
+.comment-text {
+  font-size: 0.88rem; color: var(--text); line-height: 1.55;
+  word-break: break-word;
+}
+.comment-date {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem;
+  color: var(--text-faint); margin-top: 5px;
+}
+.comments-empty {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem;
+  color: var(--text-faint); padding: 12px 0;
+}
+.comment-form {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.comment-input, .comment-textarea {
+  background: var(--bg-2); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px;
+  font-family: 'Lato', sans-serif; font-size: 0.88rem;
+  padding: 9px 13px; outline: none; transition: var(--transition);
+  width: 100%;
+}
+.comment-input { font-family: 'DM Mono', monospace; font-size: 0.82rem; }
+.comment-input:focus, .comment-textarea:focus { border-color: var(--gold); }
+.comment-textarea { resize: vertical; min-height: 60px; }
+.comment-submit-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.comment-char { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--text-faint); }
+.comment-send-btn {
+  background: var(--gold); color: #0e0e14;
+  border: none; border-radius: 8px;
+  font-family: 'DM Mono', monospace; font-size: 0.75rem; font-weight: 500;
+  padding: 9px 20px; cursor: pointer; transition: var(--transition);
+}
+.comment-send-btn:hover { opacity: 0.88; }
+.comment-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }

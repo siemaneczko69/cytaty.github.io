@@ -262,6 +262,9 @@ function openModal(q) {
   document.getElementById("modal-author").textContent = "— " + q.author;
   document.getElementById("modal-tag").textContent    = q.tag;
   document.getElementById("modal-date").textContent   = q.date ? "Dodano: " + formatDate(q.date) : "";
+  // Reset share bar
+  const shareRow = document.getElementById("modal-share-row");
+  if (shareRow) { shareRow.style.display = "none"; shareRow.innerHTML = ""; }
   // Populate hidden render card
   const card = document.getElementById("quote-render-card");
   const colorMap = {
@@ -281,10 +284,20 @@ function openModal(q) {
   document.getElementById("render-tag").textContent    = q.tag;
   document.getElementById("modal-overlay").classList.remove("hidden");
   document.body.style.overflow = "hidden";
+  // Załaduj komentarze
+  renderCommentsSection(q.id);
+  // Ustaw URL
+  const url = new URL(window.location.href);
+  url.searchParams.set("q", q.id);
+  history.replaceState(null, "", url.toString());
 }
 function closeModal() {
   document.getElementById("modal-overlay").classList.add("hidden");
   document.body.style.overflow = "";
+  // Wyczyść ?q= z URL
+  const url = new URL(window.location.href);
+  url.searchParams.delete("q");
+  history.replaceState(null, "", url.toString());
 }
 
 // ─── Sugestie ───
@@ -497,6 +510,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("contact-char-count").textContent = "0 / 500";
   });
 
+  // Przycisk Losuj
+  document.getElementById("random-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    // Nie zmieniaj aktywnego filter-btn — to nie jest zwykły filtr
+    openRandomMode();
+  });
+
+  // Przycisk Udostępnij w modalu
+  document.getElementById("modal-share-btn").addEventListener("click", () => {
+    if (!_currentModalQuote) return;
+    showShareBar(_currentModalQuote.id);
+  });
+
+  // Otwórz cytat z URL ?q=ID
+  checkUrlQuote();
+
   // Auto-refresh co 30s
   setInterval(async () => {
     if (document.getElementById("view-feed").classList.contains("active")) {
@@ -504,3 +533,223 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }, 30_000);
 });
+
+// ═══════════════════════════════════════════
+//  🎲 TRYB LOSUJ
+// ═══════════════════════════════════════════
+
+let randomOverlay = null;
+let randomQueue   = [];
+let randomIdx     = 0;
+
+function openRandomMode() {
+  if (!quotes.length) { showToast("Brak cytatów do losowania!"); return; }
+
+  // Przetasuj kopię tablicy (Fisher-Yates)
+  randomQueue = [...quotes].sort(() => Math.random() - 0.5);
+  randomIdx   = 0;
+
+  randomOverlay = document.createElement("div");
+  randomOverlay.className = "random-overlay";
+  randomOverlay.id = "random-overlay";
+  document.body.appendChild(randomOverlay);
+  document.body.style.overflow = "hidden";
+
+  renderRandomCard();
+
+  document.addEventListener("keydown", onRandomKey);
+}
+
+function renderRandomCard() {
+  const q      = randomQueue[randomIdx];
+  const myLikes = getMyLikes();
+  const liked   = myLikes.includes(q.id);
+
+  const colorMap = {
+    ink:"linear-gradient(135deg,#1a1a2e,#16213e)", wine:"linear-gradient(135deg,#4a0e0e,#2d0a0a)",
+    forest:"linear-gradient(135deg,#0d2b1e,#081a12)", ocean:"linear-gradient(135deg,#0a1f3a,#060f1d)",
+    dusk:"linear-gradient(135deg,#2a1a3e,#180e26)", cream:"linear-gradient(135deg,#f5f0e8,#ede7d7)",
+    rose:"linear-gradient(135deg,#3d1525,#220b15)", ember:"linear-gradient(135deg,#3a1f0a,#1f0e00)",
+    sage:"linear-gradient(135deg,#1e2a22,#101a14)", obsidian:"linear-gradient(135deg,#1f0c0c,#0e0608)",
+    abyss:"linear-gradient(135deg,#091a1f,#040d10)", storm:"linear-gradient(135deg,#111820,#090e15)",
+    void:"linear-gradient(135deg,#141418,#0c0c10)"
+  };
+  const isLight   = q.color === "cream";
+  const cardStyle = `background:${colorMap[q.color]||colorMap.ink};color:${isLight?"#2a2018":"#e8e4d8"};`;
+
+  randomOverlay.innerHTML = `
+    <div class="random-card-wrap">
+      <div class="random-card" style="${cardStyle}">
+        <span class="random-quote-mark">&ldquo;</span>
+        <p class="random-text">${escapeHTML(q.text)}</p>
+        <div class="random-author">— ${escapeHTML(q.author)}</div>
+        <span class="random-tag">${escapeHTML(q.tag)}</span>
+      </div>
+      <div class="random-counter">${randomIdx + 1} / ${randomQueue.length}</div>
+    </div>
+    <div class="random-controls">
+      <button class="random-like-btn${liked?" liked":""}" id="r-like-btn">
+        ${liked?"❤":"♡"} ${q.likes||0}
+      </button>
+      <button class="random-next-btn" id="r-next-btn">Następny →</button>
+      <button class="random-close-btn" id="r-close-btn">✕ Zamknij</button>
+    </div>`;
+
+  document.getElementById("r-next-btn").addEventListener("click", nextRandomCard);
+  document.getElementById("r-close-btn").addEventListener("click", closeRandomMode);
+  document.getElementById("r-like-btn").addEventListener("click", () => {
+    toggleLike(q.id);
+    renderRandomCard(); // odśwież przycisk
+  });
+}
+
+function nextRandomCard() {
+  randomIdx = (randomIdx + 1) % randomQueue.length;
+  // Jeśli wróciliśmy na początek — przetasuj od nowa
+  if (randomIdx === 0) randomQueue = randomQueue.sort(() => Math.random() - 0.5);
+  renderRandomCard();
+}
+
+function closeRandomMode() {
+  if (randomOverlay) { randomOverlay.remove(); randomOverlay = null; }
+  document.body.style.overflow = "";
+  document.removeEventListener("keydown", onRandomKey);
+}
+
+function onRandomKey(e) {
+  if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); nextRandomCard(); }
+  if (e.key === "Escape") closeRandomMode();
+}
+
+
+// ═══════════════════════════════════════════
+//  🔗 LINKI DO CYTATÓW
+// ═══════════════════════════════════════════
+
+function getShareUrl(id) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash   = "";
+  url.searchParams.set("q", id);
+  return url.toString();
+}
+
+function showShareBar(quoteId) {
+  const row = document.getElementById("modal-share-row");
+  const url = getShareUrl(quoteId);
+  row.style.display = "block";
+  row.innerHTML = `
+    <div class="share-bar">
+      <span class="share-url">${escapeHTML(url)}</span>
+      <button class="share-copy-btn" id="share-copy-url">Kopiuj link</button>
+    </div>`;
+  document.getElementById("share-copy-url").addEventListener("click", () => {
+    navigator.clipboard.writeText(url).then(
+      () => showToast("✓ Link skopiowany!"),
+      () => showToast("Błąd kopiowania.")
+    );
+  });
+}
+
+// Otwórz cytat z URL ?q=ID przy starcie
+function checkUrlQuote() {
+  const params = new URLSearchParams(window.location.search);
+  const qId    = params.get("q");
+  if (!qId) return;
+  const q = quotes.find(x => x.id === qId);
+  if (q) { openModal(q); }
+}
+
+
+// ═══════════════════════════════════════════
+//  💬 KOMENTARZE
+// ═══════════════════════════════════════════
+
+function commentsUrl(quoteId, path="") {
+  return `${FIREBASE_URL}/comments/${quoteId}${path}.json`;
+}
+
+async function loadComments(quoteId) {
+  try {
+    const res  = await fetch(commentsUrl(quoteId));
+    const data = await res.json();
+    return data ? Object.values(data).sort((a,b) => new Date(a.date) - new Date(b.date)) : [];
+  } catch(e) { return []; }
+}
+
+async function renderCommentsSection(quoteId) {
+  const section = document.getElementById("modal-comments-section");
+  section.innerHTML = `<div class="comments-section">
+    <div class="comments-title">Komentarze</div>
+    <div class="comments-list" id="comments-list-${quoteId}">
+      <div class="comments-empty">Ładowanie…</div>
+    </div>
+    <div class="comment-form">
+      <input type="text" class="comment-input" id="c-nick-${quoteId}" placeholder="Nick (opcjonalnie)" maxlength="40" />
+      <textarea class="comment-textarea" id="c-text-${quoteId}" placeholder="Napisz komentarz…" maxlength="300" rows="2"></textarea>
+      <div class="comment-submit-row">
+        <span class="comment-char" id="c-char-${quoteId}">0 / 300</span>
+        <button class="comment-send-btn" id="c-send-${quoteId}">Wyślij</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById(`c-text-${quoteId}`).addEventListener("input", e => {
+    document.getElementById(`c-char-${quoteId}`).textContent = `${e.target.value.length} / 300`;
+  });
+  document.getElementById(`c-send-${quoteId}`).addEventListener("click", () => addComment(quoteId));
+
+  // Załaduj komentarze
+  const comments = await loadComments(quoteId);
+  renderCommentsList(quoteId, comments);
+}
+
+function renderCommentsList(quoteId, comments) {
+  const list = document.getElementById(`comments-list-${quoteId}`);
+  if (!list) return;
+  if (!comments.length) {
+    list.innerHTML = `<div class="comments-empty">Brak komentarzy. Bądź pierwszy!</div>`;
+    return;
+  }
+  list.innerHTML = comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-nick">${escapeHTML(c.nick||"Anonim")}</div>
+      <div class="comment-text">${escapeHTML(c.text)}</div>
+      <div class="comment-date">${c.date||""}</div>
+    </div>`).join("");
+  // Przewiń do najnowszego
+  list.scrollTop = list.scrollHeight;
+}
+
+async function addComment(quoteId) {
+  const nick  = document.getElementById(`c-nick-${quoteId}`).value.trim();
+  const text  = document.getElementById(`c-text-${quoteId}`).value.trim();
+  if (!text) { showToast("Napisz coś przed wysłaniem!"); return; }
+
+  const btn = document.getElementById(`c-send-${quoteId}`);
+  btn.textContent = "Wysyłam…"; btn.disabled = true;
+
+  const c = {
+    id:   "c-" + Date.now(),
+    nick: nick || "Anonim",
+    text,
+    date: new Date().toLocaleString("pl-PL", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })
+  };
+
+  try {
+    const res = await fetch(commentsUrl(quoteId, `/${c.id}`), {
+      method:  "PUT",
+      headers: {"Content-Type":"application/json"},
+      body:    JSON.stringify(c)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    document.getElementById(`c-text-${quoteId}`).value = "";
+    document.getElementById(`c-char-${quoteId}`).textContent = "0 / 300";
+    const updated = await loadComments(quoteId);
+    renderCommentsList(quoteId, updated);
+    showToast("✓ Komentarz dodany!");
+  } catch(e) {
+    showToast("Błąd: " + e.message);
+  }
+  btn.textContent = "Wyślij"; btn.disabled = false;
+}
