@@ -595,6 +595,10 @@ body {
   padding: 11px 14px;
   border: 1px solid var(--border);
 }
+.comment-item.comment-reported {
+  border-color: rgba(232,115,90,0.35);
+  background: rgba(232,115,90,0.04);
+}
 .comment-nick {
   font-family: 'DM Mono', monospace; font-size: 0.68rem;
   color: var(--gold); margin-bottom: 4px;
@@ -603,10 +607,20 @@ body {
   font-size: 0.88rem; color: var(--text); line-height: 1.55;
   word-break: break-word;
 }
+.comment-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 5px;
+}
 .comment-date {
   font-family: 'DM Mono', monospace; font-size: 0.6rem;
-  color: var(--text-faint); margin-top: 5px;
+  color: var(--text-faint);
 }
+.comment-report-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 0.72rem; padding: 0 2px;
+  transition: var(--transition); line-height: 1;
+}
+.comment-report-btn:hover { color: var(--accent); }
 .comments-empty {
   font-family: 'DM Mono', monospace; font-size: 0.72rem;
   color: var(--text-faint); padding: 12px 0;

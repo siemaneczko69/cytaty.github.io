@@ -698,7 +698,13 @@ function commentsUrl(quoteId, path="") { return `${FIREBASE_URL}/comments/${quot
 async function loadComments(quoteId) {
   try {
     const res=await fetch(commentsUrl(quoteId)), data=await res.json();
-    return data ? Object.values(data).sort((a,b)=>new Date(a.date)-new Date(b.date)) : [];
+    if (!data) return [];
+    return Object.values(data).sort((a,b) => {
+      // Sortuj po timestamp (ISO) jeśli istnieje, fallback na id (zawiera Date.now())
+      const ta = a.timestamp || a.id || "";
+      const tb = b.timestamp || b.id || "";
+      return ta < tb ? -1 : ta > tb ? 1 : 0;
+    });
   } catch(e) { return []; }
 }
 
@@ -727,12 +733,27 @@ function renderCommentsList(quoteId, comments) {
   const list=document.getElementById(`comments-list-${quoteId}`); if(!list) return;
   if(!comments.length) { list.innerHTML=`<div class="comments-empty">Brak komentarzy. Bądź pierwszy!</div>`; return; }
   list.innerHTML=comments.map(c=>`
-    <div class="comment-item">
-      <div class="comment-nick">${escapeHTML(c.nick||"Anonim")}</div>
+    <div class="comment-item${c.reported?' comment-reported':''}">
+      <div class="comment-nick">${escapeHTML(c.nick||"Anonim")}${c.reported?` <span style="font-size:0.6rem;color:#e8735a;font-family:'DM Mono',monospace;">⚑ zgłoszony</span>`:''}</div>
       <div class="comment-text">${escapeHTML(c.text)}</div>
-      <div class="comment-date">${c.date||""}</div>
+      <div class="comment-footer">
+        <span class="comment-date">${c.dateDisplay||c.date||""}</span>
+        ${!c.reported?`<button class="comment-report-btn" data-qid="${escapeHTML(quoteId)}" data-cid="${escapeHTML(c.id)}" title="Zgłoś komentarz">⚑</button>`:''}
+      </div>
     </div>`).join("");
+  // Eventy zgłaszania
+  list.querySelectorAll(".comment-report-btn").forEach(btn => {
+    btn.addEventListener("click", () => reportComment(btn.dataset.qid, btn.dataset.cid, quoteId));
+  });
   list.scrollTop=list.scrollHeight;
+}
+
+async function reportComment(quoteId, commentId, renderQuoteId) {
+  try {
+    await fetch(commentsUrl(quoteId,`/${commentId}/reported`),{method:"PUT",headers:{"Content-Type":"application/json"},body:"true"});
+    showToast("✓ Komentarz zgłoszony do moderacji.");
+    renderCommentsList(renderQuoteId, await loadComments(renderQuoteId));
+  } catch(e) { showToast("Błąd zgłaszania: "+e.message); }
 }
 
 async function addComment(quoteId) {
@@ -741,7 +762,15 @@ async function addComment(quoteId) {
   if(!text){showToast("Napisz coś przed wysłaniem!");return;}
   const btn=document.getElementById(`c-send-${quoteId}`);
   btn.textContent="Wysyłam…"; btn.disabled=true;
-  const c={id:"c-"+Date.now(),nick:nick||"Anonim",text,date:new Date().toLocaleString("pl-PL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})};
+  const now = new Date();
+  const c={
+    id:          "c-"+Date.now(),
+    nick:        nick||"Anonim",
+    text,
+    timestamp:   now.toISOString(),   // do sortowania
+    dateDisplay: now.toLocaleString("pl-PL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}),
+    reported:    false
+  };
   try {
     const res=await fetch(commentsUrl(quoteId,`/${c.id}`),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(c)});
     if(!res.ok) throw new Error(`HTTP ${res.status}`);

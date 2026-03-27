@@ -266,9 +266,12 @@
       <div class="stats-strip">
         <div class="stat-pill"><strong id="c-stat-total">—</strong>łącznie</div>
         <div class="stat-pill"><strong id="c-stat-quotes">—</strong>cytatów z komentarzami</div>
+        <div class="stat-pill"><strong id="c-stat-reported">—</strong>zgłoszonych</div>
       </div>
       <div class="toolbar">
         <input type="text" class="toolbar-search" id="c-search" placeholder="Szukaj komentarza lub nicka…" />
+        <button class="filt-btn active" data-cf="wszystkie">Wszystkie</button>
+        <button class="filt-btn" data-cf="zgłoszone">⚑ Zgłoszone</button>
       </div>
       <div class="quotes-list" id="comments-admin-list">
         <div class="empty-panel"><div class="spinner"></div>Ładowanie komentarzy…</div>
@@ -1091,8 +1094,9 @@
   let _tt; function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove("show"),2800);}
 
   /* ── COMMENTS ── */
-  let allComments = []; // [{quoteId, quoteText, quoteAuthor, commentId, nick, text, date}]
+  let allComments = [];
   let cSearch = "";
+  let cFilter = "wszystkie";
 
   function commentsUrl(quoteId, path="") {
     return `${FIREBASE_URL}/comments/${quoteId}${path}.json`;
@@ -1101,12 +1105,10 @@
   async function loadComments() {
     const list = document.getElementById("comments-admin-list");
     try {
-      // Pobierz wszystkie komentarze naraz
-      const res = await fetch(`${FIREBASE_URL}/comments.json`);
+      const res  = await fetch(`${FIREBASE_URL}/comments.json`);
       const data = await res.json();
       allComments = [];
       if (data) {
-        // Zbierz quoteId-y których nie ma w quotes[] — pobierz je z Firebase
         const missingIds = [...new Set(Object.keys(data))].filter(id => !quotes.find(x => x.id === id));
         const fetchedQuotes = {};
         await Promise.all(missingIds.map(async id => {
@@ -1116,7 +1118,6 @@
             if (q && q.text) fetchedQuotes[id] = q;
           } catch(e) {}
         }));
-
         for (const [quoteId, commentsObj] of Object.entries(data)) {
           const q = quotes.find(x => x.id === quoteId) || fetchedQuotes[quoteId];
           const qText   = q ? q.text   : "(cytat usunięty)";
@@ -1126,21 +1127,49 @@
           }
         }
       }
-      allComments.sort((a,b) => new Date(b.date) - new Date(a.date));
-      // Aktualizuj badge
-      const badge = document.getElementById("comm-badge");
-      if (allComments.length > 0) { badge.textContent = allComments.length; badge.classList.add("visible"); }
+      // Sortuj po timestamp ISO (nowe komentarze) lub id (stare) — od najstarszego
+      allComments.sort((a, b) => {
+        const ta = a.timestamp || a.commentId || "";
+        const tb = b.timestamp || b.commentId || "";
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+
+      // Badge: tylko komentarze nowsze niż ostatnie wejście admina
+      const lastSeen   = localStorage.getItem("admin_comments_seen") || "";
+      const newCount   = allComments.filter(c => (c.timestamp || "") > lastSeen).length;
+      const reported   = allComments.filter(c => c.reported).length;
+      const badge      = document.getElementById("comm-badge");
+      const showCount  = reported > 0 ? reported : newCount;
+      badge.textContent = showCount || "";
+      badge.classList.toggle("visible", showCount > 0);
+      if (reported > 0) badge.style.background = "var(--accent)";
+      else badge.style.background = "";
+
       renderComments();
     } catch(e) {
       list.innerHTML = `<div class="empty-panel">Błąd ładowania: ${esc(e.message)}</div>`;
     }
   }
 
+  // Przy wejściu w zakładkę — zaktualizuj "ostatnio widziany"
+  document.querySelector('[data-tab="comments"]').addEventListener("click", () => {
+    localStorage.setItem("admin_comments_seen", new Date().toISOString());
+    const badge = document.getElementById("comm-badge");
+    // Zostaw badge zgłoszonych, wyczyść "nowe"
+    const reported = allComments.filter(c => c.reported).length;
+    if (!reported) { badge.textContent = ""; badge.classList.remove("visible"); }
+  });
+
   document.getElementById("c-search").addEventListener("input", e => { cSearch = e.target.value; renderComments(); });
+  document.querySelectorAll("[data-cf]").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-cf]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active"); cFilter = btn.dataset.cf; renderComments();
+  }));
 
   function renderComments() {
     const list = document.getElementById("comments-admin-list");
     let filtered = [...allComments];
+    if (cFilter === "zgłoszone") filtered = filtered.filter(c => c.reported);
     if (cSearch.trim()) {
       const s = cSearch.toLowerCase();
       filtered = filtered.filter(c =>
@@ -1149,41 +1178,102 @@
         (c.quoteText||"").toLowerCase().includes(s)
       );
     }
-    document.getElementById("c-stat-total").textContent = allComments.length;
-    const uniqueQuotes = new Set(allComments.map(c => c.quoteId)).size;
-    document.getElementById("c-stat-quotes").textContent = uniqueQuotes;
+    document.getElementById("c-stat-total").textContent    = allComments.length;
+    document.getElementById("c-stat-quotes").textContent   = new Set(allComments.map(c => c.quoteId)).size;
+    document.getElementById("c-stat-reported").textContent = allComments.filter(c => c.reported).length;
 
     if (!filtered.length) {
-      list.innerHTML = `<div class="empty-panel">Brak komentarzy${cSearch ? " pasujących do wyszukiwania." : "."}</div>`;
+      list.innerHTML = `<div class="empty-panel">Brak komentarzy${cFilter==="zgłoszone"?" zgłoszonych":""}${cSearch?" pasujących do wyszukiwania":""}.${cFilter==="zgłoszone"&&!cSearch?" Czysto 🎉":""}</div>`;
       return;
     }
     list.innerHTML = "";
-    filtered.forEach(c => list.appendChild(buildCommentCard(c)));
+    // Wyświetl od najnowszego w adminie (odwrócona kolejność)
+    [...filtered].reverse().forEach(c => list.appendChild(buildCommentCard(c)));
   }
 
   function buildCommentCard(c) {
     const card = document.createElement("div");
-    card.className = "q-card";
+    card.className = "q-card" + (c.reported ? " q-card-reported" : "");
+    if (c.reported) card.style.borderColor = "rgba(232,115,90,0.4)";
+    const dateStr = c.dateDisplay || c.date || "";
     card.innerHTML = `
       <div class="q-card-header">
         <div class="q-card-left">
           <div class="q-text" style="font-size:0.88rem;">${esc(c.text)}</div>
           <div class="q-meta" style="margin-top:6px;">
             <span class="q-author">${esc(c.nick||"Anonim")}</span>
-            <span class="q-date">${esc(c.date||"")}</span>
+            <span class="q-date">${esc(dateStr)}</span>
+            ${c.reported?'<span class="q-tag" style="border-color:var(--accent);color:var(--accent);">⚑ zgłoszony</span>':""}
           </div>
           <div style="margin-top:8px;padding:8px 12px;background:var(--bg-2);border-radius:6px;border-left:2px solid var(--gold);">
             <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text-faint);margin-bottom:3px;">Do cytatu:</div>
             <div style="font-family:'Playfair Display',serif;font-size:0.8rem;font-style:italic;color:var(--text-dim);">${esc(c.quoteText.slice(0,80))}${c.quoteText.length>80?"…":""}</div>
             <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);">— ${esc(c.quoteAuthor)}</div>
           </div>
+          <div class="q-edit-form" id="cedit-${esc(c.commentId)}" style="display:none;margin-top:10px;">
+            <input type="text" class="edit-input" id="ce-nick-${esc(c.commentId)}" value="${esc(c.nick||"Anonim")}" placeholder="Nick" maxlength="40" style="margin-bottom:8px;width:100%;" />
+            <textarea class="edit-textarea" id="ce-text-${esc(c.commentId)}" maxlength="300" rows="3">${esc(c.text)}</textarea>
+            <div class="edit-actions" style="margin-top:8px;">
+              <button class="edit-cancel ce-cancel" data-cid="${esc(c.commentId)}">Anuluj</button>
+              <button class="edit-save ce-save" data-qid="${esc(c.quoteId)}" data-cid="${esc(c.commentId)}">Zapisz</button>
+            </div>
+          </div>
         </div>
         <div class="q-actions">
+          <button class="q-btn ce-edit-btn" data-cid="${esc(c.commentId)}">✏ Edytuj</button>
+          ${c.reported?`<button class="q-btn" data-unreport data-qid="${esc(c.quoteId)}" data-cid="${esc(c.commentId)}">✓ Odrzuć zgłoszenie</button>`:""}
           <button class="q-btn del" data-qid="${esc(c.quoteId)}" data-cid="${esc(c.commentId)}">✕ Usuń</button>
         </div>
       </div>`;
+
+    // Edytuj
+    card.querySelector(".ce-edit-btn").addEventListener("click", () => {
+      const panel = card.querySelector(`#cedit-${c.commentId}`);
+      const isOpen = panel.style.display !== "none";
+      panel.style.display = isOpen ? "none" : "block";
+      card.querySelector(".ce-edit-btn").textContent = isOpen ? "✏ Edytuj" : "▲ Zwiń";
+    });
+    card.querySelector(".ce-cancel").addEventListener("click", () => {
+      card.querySelector(`#cedit-${c.commentId}`).style.display = "none";
+      card.querySelector(".ce-edit-btn").textContent = "✏ Edytuj";
+    });
+    card.querySelector(".ce-save").addEventListener("click", () => saveComment(c.quoteId, c.commentId, card));
+
+    // Odrzuć zgłoszenie
+    if (c.reported) {
+      card.querySelector("[data-unreport]").addEventListener("click", () => unreportComment(c.quoteId, c.commentId));
+    }
+    // Usuń
     card.querySelector(".del").addEventListener("click", () => deleteComment(c.quoteId, c.commentId));
     return card;
+  }
+
+  async function saveComment(quoteId, commentId, card) {
+    const nick = card.querySelector(`#ce-nick-${commentId}`).value.trim();
+    const text = card.querySelector(`#ce-text-${commentId}`).value.trim();
+    if (!text) { showToast("Treść nie może być pusta!"); return; }
+    const btn = card.querySelector(".ce-save"); btn.textContent = "Zapisuję…"; btn.disabled = true;
+    try {
+      await fetch(commentsUrl(quoteId, `/${commentId}/nick`), { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(nick||"Anonim") });
+      await fetch(commentsUrl(quoteId, `/${commentId}/text`), { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(text) });
+      const c = allComments.find(x => x.commentId === commentId);
+      if (c) { c.nick = nick||"Anonim"; c.text = text; }
+      renderComments();
+      showToast("✓ Komentarz zaktualizowany.");
+    } catch(e) { showToast("Błąd: " + e.message); btn.textContent = "Zapisz"; btn.disabled = false; }
+  }
+
+  async function unreportComment(quoteId, commentId) {
+    try {
+      await fetch(commentsUrl(quoteId, `/${commentId}/reported`), { method:"PUT", headers:{"Content-Type":"application/json"}, body: "false" });
+      const c = allComments.find(x => x.commentId === commentId);
+      if (c) c.reported = false;
+      // Aktualizuj badge
+      const reported = allComments.filter(c => c.reported).length;
+      const badge = document.getElementById("comm-badge");
+      badge.textContent = reported || ""; badge.classList.toggle("visible", reported > 0);
+      renderComments(); showToast("✓ Zgłoszenie odrzucone.");
+    } catch(e) { showToast("Błąd: " + e.message); }
   }
 
   async function deleteComment(quoteId, commentId) {
@@ -1192,8 +1282,11 @@
       const res = await fetch(commentsUrl(quoteId, `/${commentId}`), { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       allComments = allComments.filter(c => !(c.quoteId === quoteId && c.commentId === commentId));
-      renderComments();
-      showToast("✓ Komentarz usunięty.");
+      // Aktualizuj badge
+      const reported = allComments.filter(c => c.reported).length;
+      const badge = document.getElementById("comm-badge");
+      badge.textContent = reported || ""; badge.classList.toggle("visible", reported > 0);
+      renderComments(); showToast("✓ Komentarz usunięty.");
     } catch(e) { showToast("Błąd usuwania: " + e.message); }
   }
 </script>
