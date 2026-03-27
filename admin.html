@@ -836,37 +836,124 @@
     const mgr = document.getElementById("colors-manager"); if (!mgr) return;
     const sorted = Object.entries(adminColors).sort(([,a],[,b])=>(a.order||0)-(b.order||0));
     mgr.innerHTML = "";
-    sorted.forEach(([key, c], i) => {
-      const row = document.createElement("div");
-      row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;";
-      const preview = `linear-gradient(90deg,${c.bg1},${c.bg2})`;
-      row.innerHTML = `
-        <div style="width:36px;height:36px;border-radius:6px;background:${preview};flex-shrink:0;border:1px solid rgba(255,255,255,0.1);"></div>
-        <input type="text" class="edit-input" value="${esc(c.label)}" data-ck="${esc(key)}" data-field="label" style="max-width:110px;" placeholder="nazwa" />
-        <input type="color" value="${c.bg1}" data-ck="${esc(key)}" data-field="bg1" style="width:36px;height:36px;border:none;background:none;cursor:pointer;" title="Kolor 1" />
-        <input type="color" value="${c.bg2}" data-ck="${esc(key)}" data-field="bg2" style="width:36px;height:36px;border:none;background:none;cursor:pointer;" title="Kolor 2" />
-        <input type="color" value="${c.text}" data-ck="${esc(key)}" data-field="text" style="width:36px;height:36px;border:none;background:none;cursor:pointer;" title="Kolor tekstu" />
-        <label style="display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text-dim);cursor:pointer;">
-          <input type="checkbox" data-ck="${esc(key)}" data-field="adminOnly" ${c.adminOnly?"checked":""} /> admin
-        </label>
-        <button class="q-btn" data-mv="up" data-ck="${esc(key)}" title="W górę" ${i===0?"disabled":""}>↑</button>
-        <button class="q-btn" data-mv="down" data-ck="${esc(key)}" title="W dół" ${i===sorted.length-1?"disabled":""}>↓</button>
-        <button class="q-btn del" data-del-c="${esc(key)}" title="Usuń">✕</button>`;
 
-      // Zmiana pól — debounced zapis
-      row.querySelectorAll("[data-field]").forEach(inp => {
-        const ev = inp.type === "checkbox" ? "change" : (inp.type === "color" ? "input" : "change");
-        inp.addEventListener(ev, () => {
-          const k = inp.dataset.ck, f = inp.dataset.field;
-          adminColors[k][f] = inp.type==="checkbox" ? inp.checked : inp.value;
-          if (f==="bg1"||f==="bg2"||f==="text") {
-            // Odśwież podgląd w wierszu
-            const swatch = row.querySelector("div");
-            swatch.style.background = `linear-gradient(90deg,${adminColors[k].bg1},${adminColors[k].bg2})`;
-          }
-          saveConfigColors().then(() => { refreshAdminColorSelect(); showFb("colors-feedback","✓ Zapisano.","ok"); });
-        });
+    sorted.forEach(([key, c], i) => {
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "margin-bottom:10px;";
+
+      // ── Wiersz podsumowania ──
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;";
+      const grad = `linear-gradient(90deg,${c.bg1},${c.bg2})`;
+      row.innerHTML = `
+        <div style="width:36px;height:36px;border-radius:6px;background:${grad};flex-shrink:0;border:1px solid rgba(255,255,255,0.1);"></div>
+        <span style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--text);flex:1;min-width:80px;">${esc(c.label)}${c.adminOnly?' <span style="font-size:0.6rem;color:var(--gold);">ADMIN</span>':''}</span>
+        <button class="q-btn edit-color-btn" data-ck="${esc(key)}">✏ Edytuj</button>
+        <button class="q-btn" data-mv="up"   data-ck="${esc(key)}" ${i===0?"disabled":""}>↑</button>
+        <button class="q-btn" data-mv="down" data-ck="${esc(key)}" ${i===sorted.length-1?"disabled":""}>↓</button>
+        <button class="q-btn del" data-del-c="${esc(key)}">✕</button>`;
+
+      // ── Panel edycji (zwinięty) ──
+      const panel = document.createElement("div");
+      panel.id = `color-edit-panel-${key}`;
+      panel.style.cssText = "display:none;margin-top:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;";
+      panel.innerHTML = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;">Nazwa</div>
+            <input type="text" class="edit-input" id="ec-label-${key}" value="${esc(c.label)}" style="width:100%;" placeholder="nazwa" />
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <label style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);cursor:pointer;padding-bottom:10px;">
+              <input type="checkbox" id="ec-admin-${key}" ${c.adminOnly?"checked":""} /> Tylko admin
+            </label>
+          </div>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-start;">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;">Kolor 1</div>
+            <input type="color" id="ec-bg1-${key}" value="${c.bg1}" style="width:52px;height:44px;border:none;background:none;cursor:pointer;" />
+          </div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;">Kolor 2</div>
+            <input type="color" id="ec-bg2-${key}" value="${c.bg2}" style="width:52px;height:44px;border:none;background:none;cursor:pointer;" />
+          </div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;">Tekst</div>
+            <input type="color" id="ec-text-${key}" value="${c.text}" style="width:52px;height:44px;border:none;background:none;cursor:pointer;" />
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;">Podgląd karty</div>
+            <div id="ec-preview-${key}" style="border-radius:10px;padding:18px 20px 14px;border:1px solid rgba(255,255,255,0.08);background:${grad};color:${c.text};">
+              <div style="font-family:'Playfair Display',serif;font-size:2rem;line-height:1;opacity:0.4;margin-bottom:-6px;font-style:italic;">&ldquo;</div>
+              <p style="font-family:'Playfair Display',serif;font-size:0.9rem;font-style:italic;line-height:1.55;margin-bottom:8px;">Przykładowy cytat wygląda właśnie tak jak będzie wyglądał na stronie</p>
+              <div style="font-family:'DM Mono',monospace;font-size:0.7rem;opacity:0.6;margin-bottom:6px;">— Autor</div>
+              <span style="font-family:'DM Mono',monospace;font-size:0.6rem;border:1px solid currentColor;opacity:0.4;padding:2px 8px;border-radius:20px;">kategoria</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="edit-cancel ec-cancel-btn" data-ck="${esc(key)}">Anuluj</button>
+          <button class="edit-save ec-save-btn" data-ck="${esc(key)}">Zapisz zmiany</button>
+        </div>`;
+
+      wrap.appendChild(row);
+      wrap.appendChild(panel);
+      mgr.appendChild(wrap);
+
+      // ── Eventy ──
+
+      // Otwórz / zamknij panel
+      row.querySelector(".edit-color-btn").addEventListener("click", () => {
+        const isOpen = panel.style.display !== "none";
+        // Zamknij wszystkie inne panele
+        mgr.querySelectorAll("[id^='color-edit-panel-']").forEach(p => p.style.display = "none");
+        mgr.querySelectorAll(".edit-color-btn").forEach(b => b.textContent = "✏ Edytuj");
+        if (!isOpen) {
+          panel.style.display = "block";
+          row.querySelector(".edit-color-btn").textContent = "▲ Zwiń";
+        }
       });
+
+      panel.querySelector(".ec-cancel-btn").addEventListener("click", () => {
+        panel.style.display = "none";
+        row.querySelector(".edit-color-btn").textContent = "✏ Edytuj";
+        // Przywróć oryginalne wartości w pickerach
+        panel.querySelector(`#ec-label-${key}`).value   = adminColors[key].label;
+        panel.querySelector(`#ec-bg1-${key}`).value     = adminColors[key].bg1;
+        panel.querySelector(`#ec-bg2-${key}`).value     = adminColors[key].bg2;
+        panel.querySelector(`#ec-text-${key}`).value    = adminColors[key].text;
+        panel.querySelector(`#ec-admin-${key}`).checked = adminColors[key].adminOnly;
+      });
+
+      // Live preview przy zmianie pickerów
+      const updatePreviewPanel = () => {
+        const bg1  = panel.querySelector(`#ec-bg1-${key}`).value;
+        const bg2  = panel.querySelector(`#ec-bg2-${key}`).value;
+        const text = panel.querySelector(`#ec-text-${key}`).value;
+        const prev = panel.querySelector(`#ec-preview-${key}`);
+        prev.style.background = `linear-gradient(135deg,${bg1},${bg2})`;
+        prev.style.color = text;
+      };
+      ["ec-bg1","ec-bg2","ec-text"].forEach(pfx => {
+        panel.querySelector(`#${pfx}-${key}`).addEventListener("input", updatePreviewPanel);
+      });
+
+      // Zapisz
+      panel.querySelector(".ec-save-btn").addEventListener("click", async () => {
+        const btn   = panel.querySelector(".ec-save-btn");
+        btn.textContent = "Zapisuję…"; btn.disabled = true;
+        adminColors[key].label     = panel.querySelector(`#ec-label-${key}`).value.trim() || adminColors[key].label;
+        adminColors[key].bg1       = panel.querySelector(`#ec-bg1-${key}`).value;
+        adminColors[key].bg2       = panel.querySelector(`#ec-bg2-${key}`).value;
+        adminColors[key].text      = panel.querySelector(`#ec-text-${key}`).value;
+        adminColors[key].adminOnly = panel.querySelector(`#ec-admin-${key}`).checked;
+        await saveConfigColors();
+        renderColorsManager();
+        refreshAdminColorSelect();
+        showFb("colors-feedback", `✓ Kolor „${adminColors[key]?.label || key}" zaktualizowany.`, "ok");
+      });
+
       // Kolejność
       row.querySelectorAll("[data-mv]").forEach(btn => btn.addEventListener("click", () => {
         const k   = btn.dataset.ck;
@@ -875,13 +962,13 @@
         const idx  = keys.indexOf(k);
         if (idx+dir < 0 || idx+dir >= keys.length) return;
         const tmp = adminColors[keys[idx]].order;
-        adminColors[keys[idx]].order   = adminColors[keys[idx+dir]].order;
+        adminColors[keys[idx]].order     = adminColors[keys[idx+dir]].order;
         adminColors[keys[idx+dir]].order = tmp;
         saveConfigColors().then(() => { renderColorsManager(); refreshAdminColorSelect(); showFb("colors-feedback","✓ Kolejność zapisana.","ok"); });
       }));
+
       // Usuń
       row.querySelector("[data-del-c]").addEventListener("click", () => deleteColor(key));
-      mgr.appendChild(row);
     });
   }
 
