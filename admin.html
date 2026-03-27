@@ -237,17 +237,10 @@
           <div class="edit-row">
             <input type="text" class="edit-input" id="new-author" placeholder="Autor / pseudonim" maxlength="60" />
             <select class="edit-select" id="new-tag">
-              <option value="ogólne">ogólne</option><option value="motywacja">motywacja</option>
-              <option value="miłość">miłość</option><option value="mądrość">mądrość</option>
-              <option value="humor">humor</option><option value="filozofia">filozofia</option>
+              <!-- wypełniane dynamicznie przez loadConfig() -->
             </select>
             <select class="edit-select" id="new-color">
-              <option value="ink">ink</option><option value="wine">wine</option><option value="forest">forest</option>
-              <option value="ocean">ocean</option><option value="dusk">dusk</option><option value="cream">cream</option>
-              <option value="petal">🌸 petal (admin)</option>
-              <option value="rose">rose</option><option value="ember">ember</option><option value="sage">sage</option>
-              <option value="obsidian">obsidian</option><option value="abyss">abyss</option>
-              <option value="storm">storm</option><option value="void">void</option>
+              <!-- wypełniane dynamicznie przez loadConfig() -->
             </select>
           </div>
           <textarea class="edit-textarea" id="new-text" placeholder="Treść cytatu… (Enter = nowa linia, będzie widoczna na stronie)" maxlength="280" rows="3"></textarea>
@@ -258,12 +251,7 @@
       <div class="toolbar">
         <input type="text" class="toolbar-search" id="q-search" placeholder="Szukaj cytatu lub autora…" />
         <button class="filt-btn active" data-qf="wszystkie">Wszystkie</button>
-        <button class="filt-btn" data-qf="ogólne">ogólne</button>
-        <button class="filt-btn" data-qf="motywacja">motywacja</button>
-        <button class="filt-btn" data-qf="miłość">miłość</button>
-        <button class="filt-btn" data-qf="mądrość">mądrość</button>
-        <button class="filt-btn" data-qf="humor">humor</button>
-        <button class="filt-btn" data-qf="filozofia">filozofia</button>
+        <!-- filtry kategorii wypełniane dynamicznie przez loadConfig() -->
       </div>
       <div class="quotes-list" id="quotes-list">
         <div class="empty-panel"><div class="spinner"></div>Ładowanie cytatów…</div>
@@ -509,11 +497,24 @@
     list.innerHTML=""; filtered.forEach(q=>list.appendChild(buildQuoteCard(q)));
   }
 
-  const COLOR_MAP={ink:"#1a1a2e",wine:"#4a0e0e",forest:"#0d2b1e",ocean:"#0a1f3a",dusk:"#2a1a3e",cream:"#f5f0e8",petal:"#f5d6e8",rose:"#3d1525",ember:"#3a1f0a",sage:"#1e2a22",obsidian:"#1f0c0c",abyss:"#091a1f",storm:"#111820",void:"#141418"};
-
   function buildQuoteCard(q) {
     const card=document.createElement("div"); card.className="q-card"; card.dataset.id=q.id;
-    const dot=COLOR_MAP[q.color]||"#1a1a2e";
+    // Kolor z adminColors (dynamiczny) zamiast hardkodowanej mapy
+    const colorDef = adminColors[q.color];
+    const dot = colorDef ? colorDef.bg1 : "#1a1a2e";
+    const colorLabel = colorDef ? colorDef.label : (q.color || "ink");
+
+    // Opcje tagów z adminTags
+    const tagOptions = adminTags.map(t =>
+      `<option value="${esc(t.id)}"${q.tag===t.id?" selected":""}>${esc(t.label)}</option>`
+    ).join("");
+
+    // Opcje kolorów z adminColors
+    const colorOptions = Object.entries(adminColors)
+      .sort(([,a],[,b])=>(a.order||0)-(b.order||0))
+      .map(([k,c]) => `<option value="${esc(k)}"${q.color===k?" selected":""}>${c.adminOnly?"🔒 ":""}${esc(c.label)}</option>`)
+      .join("");
+
     card.innerHTML=`
       <div class="q-card-header">
         <div class="q-card-left">
@@ -523,7 +524,7 @@
             <span class="q-tag">${esc(q.tag)}</span>
             <span class="q-date">${q.date||""}</span>
             <span class="q-likes">♡ ${q.likes||0}</span>
-            <span class="q-tag" style="border-color:${dot}"><span class="color-dot" style="background:${dot}"></span>${esc(q.color||"ink")}</span>
+            <span class="q-tag" style="border-color:${dot}"><span class="color-dot" style="background:${dot}"></span>${esc(colorLabel)}</span>
           </div>
         </div>
         <div class="q-actions">
@@ -534,8 +535,8 @@
       <div class="q-edit-form" id="edit-${q.id}">
         <div class="edit-row">
           <input type="text" class="edit-input" id="ei-author-${q.id}" value="${esc(q.author||"")}" placeholder="Autor" maxlength="60"/>
-          <select class="edit-select" id="ei-tag-${q.id}">${["ogólne","motywacja","miłość","mądrość","humor","filozofia"].map(t=>`<option value="${t}"${q.tag===t?" selected":""}>${t}</option>`).join("")}</select>
-          <select class="edit-select" id="ei-color-${q.id}">${Object.keys(COLOR_MAP).map(c=>`<option value="${c}"${q.color===c?" selected":""}>${c}</option>`).join("")}</select>
+          <select class="edit-select" id="ei-tag-${q.id}">${tagOptions}</select>
+          <select class="edit-select" id="ei-color-${q.id}">${colorOptions}</select>
         </div>
         <textarea class="edit-textarea" id="ei-text-${q.id}" maxlength="280">${esc(q.text)}</textarea>
         <div class="edit-char" id="ei-char-${q.id}">${(q.text||"").length} / 280</div>
