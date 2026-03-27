@@ -38,14 +38,14 @@
     <section class="view active" id="view-feed">
       <div class="feed-header">
         <h1 class="feed-title">Głosy <span class="accent">Świata</span></h1>
-        <p class="feed-sub">Zbiorowa mądrość jednego miejsca</p>
+        <p class="feed-sub">Zbiorowa "mądrość" jednego miejsca</p>
         <p class="feed-stats" id="feed-stats"></p>
         <div class="feed-controls">
           <input type="text" id="search-input" class="search-input" placeholder="Szukaj cytatu lub autora…" />
           <div class="filter-row">
             <button class="filter-btn active" data-filter="all">Wszystkie</button>
-            <button class="filter-btn" data-filter="popularne">Popularne ❤</button>
-            <button class="filter-btn" id="random-btn">🎲 Losuj</button>
+            <button class="filter-btn" data-filter="popularne">❤ Popularne ❤</button>
+            <button class="filter-btn" id="random-btn">🎲 Losuj 🎲</button>
           </div>
           <div class="category-row" id="category-row">
             <button class="cat-btn active" data-cat="">Wszystkie kategorie</button>
@@ -72,8 +72,8 @@
 
         <div class="form-card">
           <div class="form-group">
-            <label for="quote-author">Twoje imię / pseudonim</label>
-            <input type="text" id="quote-author" class="form-input" placeholder="np. Jan K." maxlength="60" />
+            <label for="quote-author">Twoje imię / nick</label>
+            <input type="text" id="quote-author" class="form-input" placeholder="np. DJ tępa rura" maxlength="60" />
           </div>
 
           <div class="form-group">
@@ -123,7 +123,7 @@
           </p>
 
           <div class="form-group">
-            <label for="contact-nick">Nick / imię <span style="color:var(--text-faint);font-size:0.75rem;">(opcjonalnie)</span></label>
+            <label for="contact-nick">Imię / Nick <span style="color:var(--text-faint);font-size:0.75rem;">(opcjonalnie)</span></label>
             <input type="text" id="contact-nick" class="form-input" placeholder="np. Anonim" maxlength="60" />
           </div>
 
@@ -135,6 +135,7 @@
               <button class="tag-option" data-type="kategoria">kategoria</button>
               <button class="tag-option" data-type="błąd">błąd</button>
               <button class="tag-option" data-type="inne">inne</button>
+              <button class="tag-option" data-type="feedback">feedback</button>
             </div>
           </div>
 
@@ -154,13 +155,12 @@
     <!-- ABOUT VIEW -->
     <section class="view" id="view-about">
       <div class="about-container">
-        <h2 class="section-title">O aplikacji</h2>
+        <h2 class="section-title">O stronce</h2>
         <div class="about-card">
           <img src="about.svg" alt="About illustration" class="about-img" />
           <div class="about-content">
             <p>
-              <strong>Głosy Świata</strong> to miejsce, gdzie każdy może zostawić swój ślad
-              w postaci cytatu — własnych słów lub myśli, które warto zapamiętać.
+              <strong>Głosy Świata</strong> to miejsce, gdzie każdy może zostawić swój cytat niezaleznie od tego czy ma on sens czy nie.
             </p>
             <div class="tech-list">
               <h3>Technologie</h3>
