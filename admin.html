@@ -315,6 +315,49 @@
   <div class="tab-content" id="tab-settings">
     <div class="panel-body">
       <div class="section-head"><div class="section-head-title">Ustawienia <em>panelu</em></div></div>
+
+      <!-- KATEGORIE -->
+      <div class="settings-section">
+        <div class="settings-title">Zarządzaj <span style="color:var(--gold)">kategoriami</span></div>
+        <div class="settings-desc">Dodawaj, edytuj i zmieniaj kolejność kategorii. Zmiana nazwy automatycznie aktualizuje wszystkie cytaty w bazie.</div>
+        <div id="tags-manager" style="margin-bottom:16px;"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input type="text" class="settings-input" id="new-tag-id" placeholder="klucz (np. natura)" style="max-width:160px;margin-bottom:0;" />
+          <input type="text" class="settings-input" id="new-tag-label" placeholder="etykieta (np. Natura)" style="max-width:160px;margin-bottom:0;" />
+          <button class="settings-btn" id="add-tag-btn">＋ Dodaj kategorię</button>
+        </div>
+        <div class="settings-feedback" id="tags-feedback"></div>
+      </div>
+
+      <!-- KOLORY -->
+      <div class="settings-section">
+        <div class="settings-title">Zarządzaj <span style="color:var(--gold)">kolorami</span></div>
+        <div class="settings-desc">Dodawaj i edytuj kolory kart. Zaznacz „Tylko admin" by kolor był dostępny wyłącznie w panelu admina. Zmiany są natychmiast widoczne na stronie.</div>
+        <div id="colors-manager" style="margin-bottom:20px;"></div>
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+          <div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--gold);margin-bottom:14px;">＋ Nowy kolor</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <input type="text" class="edit-input" id="nc-key" placeholder="klucz (np. lavender)" style="max-width:150px;" />
+            <input type="text" class="edit-input" id="nc-label" placeholder="etykieta (np. Lavender)" style="max-width:150px;" />
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+            <label style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);">Kolor 1:</label>
+            <input type="color" id="nc-bg1" value="#1a1a2e" style="width:44px;height:32px;border:none;background:none;cursor:pointer;" />
+            <label style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);">Kolor 2:</label>
+            <input type="color" id="nc-bg2" value="#16213e" style="width:44px;height:32px;border:none;background:none;cursor:pointer;" />
+            <label style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);">Tekst:</label>
+            <input type="color" id="nc-text" value="#e8e4d8" style="width:44px;height:32px;border:none;background:none;cursor:pointer;" />
+            <label style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);cursor:pointer;">
+              <input type="checkbox" id="nc-admin-only" /> Tylko admin
+            </label>
+          </div>
+          <div id="nc-preview" style="width:100%;height:60px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:0.9rem;font-style:italic;">Podgląd koloru</div>
+          <button class="settings-btn" id="add-color-btn">＋ Dodaj kolor</button>
+        </div>
+        <div class="settings-feedback" id="colors-feedback"></div>
+      </div>
+
+      <!-- HASŁO -->
       <div class="settings-section">
         <div class="settings-title">Zmiana hasła</div>
         <div class="settings-desc">Hasło jest przechowywane jako hash SHA-256 w Firebase.<br/>Nie jest nigdzie zapisywane w formie tekstowej.</div>
@@ -331,7 +374,7 @@
         <div class="settings-title" style="color:var(--accent);">Strefa niebezpieczna</div>
         <div class="settings-desc">Poniższe akcje są nieodwracalne. Używaj z ostrożnością.</div>
         <button class="danger-btn" id="delete-read-sugg-btn">🗑 Usuń wszystkie przeczytane sugestie</button>
-        <div class="settings-feedback" id="danger-feedback"></div>
+        <div class="settings-feedback" id="dangers-feedback"></div>
       </div>
       <div class="settings-section">
         <div class="settings-title">Informacje</div>
@@ -391,6 +434,15 @@
     document.getElementById("delete-read-sugg-btn").addEventListener("click", deleteReadSuggestions);
     document.getElementById("firebase-info").textContent = FIREBASE_URL;
 
+    // Menadżer kolorów i kategorii
+    document.getElementById("add-tag-btn").addEventListener("click", addTag);
+    document.getElementById("add-color-btn").addEventListener("click", addColor);
+    // Podgląd nowego koloru w czasie rzeczywistym
+    ["nc-bg1","nc-bg2","nc-text"].forEach(id => {
+      document.getElementById(id).addEventListener("input", updateColorPreview);
+    });
+    updateColorPreview();
+
     window.setAdminPassword = async function(pwd) {
       const hash = await sha256(pwd);
       const res  = await fetch(`${FIREBASE_URL}/config/adminHash.json`, {
@@ -425,6 +477,7 @@
     document.getElementById("panel").style.display="block";
     await Promise.all([loadQuotes(), loadSuggestions()]);
     await loadComments(); // musi być po loadQuotes() — szuka cytatów w tablicy quotes
+    await loadConfig();   // ładuje tagi i kolory do menadżerów
   }
 
   function switchTab(name) {
@@ -617,7 +670,7 @@
     const read=suggestions.filter(s=>s.read);
     if(!read.length){showToast("Brak przeczytanych sugestii do usunięcia.");return;}
     if(!confirm(`Usunąć ${read.length} przeczytanych sugestii? Tej operacji nie można cofnąć.`)) return;
-    const fb=document.getElementById("danger-feedback"); fb.className="settings-feedback"; fb.textContent="Usuwam…";
+    const fb=document.getElementById("dangers-feedback"); fb.className="settings-feedback"; fb.textContent="Usuwam…";
     try{
       await Promise.all(read.map(s=>fetch(sugUrl(`/${s.id}`),{method:"DELETE"})));
       suggestions=suggestions.filter(s=>!s.read); renderSuggestions(); updateSuggBadge();
@@ -626,6 +679,326 @@
   }
 
   /* ── UTILS ── */
+  // ══════════════════════════════════════════
+  //  🏷 MENADŻER KATEGORII
+  // ══════════════════════════════════════════
+
+  let adminTags   = [];  // [{ id, label, order }]
+  let adminColors = {};  // { key: { label, bg1, bg2, text, adminOnly, order } }
+
+  const fbConfigUrl = (p="") => `${FIREBASE_URL}/config${p}.json`;
+
+  async function loadConfig() {
+    try {
+      const res  = await fetch(fbConfigUrl());
+      const data = await res.json();
+      adminTags   = (data && data.tags   && data.tags.length)   ? [...data.tags].sort((a,b)=>(a.order||0)-(b.order||0))   : getDefaultTags();
+      adminColors = (data && data.colors && Object.keys(data.colors).length) ? data.colors : getDefaultColors();
+      renderTagsManager();
+      renderColorsManager();
+      refreshAdminColorSelect();
+      refreshAdminTagSelects();
+    } catch(e) {
+      adminTags   = getDefaultTags();
+      adminColors = getDefaultColors();
+      renderTagsManager();
+      renderColorsManager();
+    }
+  }
+
+  function getDefaultTags() {
+    return [
+      {id:"ogólne",label:"ogólne",order:0},{id:"motywacja",label:"motywacja",order:1},
+      {id:"miłość",label:"miłość",order:2},{id:"mądrość",label:"mądrość",order:3},
+      {id:"humor",label:"humor",order:4},{id:"filozofia",label:"filozofia",order:5}
+    ];
+  }
+  function getDefaultColors() {
+    return {
+      ink:{label:"ink",bg1:"#1a1a2e",bg2:"#16213e",text:"#e8e4d8",adminOnly:false,order:0},
+      wine:{label:"wine",bg1:"#4a0e0e",bg2:"#2d0a0a",text:"#e8e4d8",adminOnly:false,order:1},
+      forest:{label:"forest",bg1:"#0d2b1e",bg2:"#081a12",text:"#e8e4d8",adminOnly:false,order:2},
+      ocean:{label:"ocean",bg1:"#0a1f3a",bg2:"#060f1d",text:"#e8e4d8",adminOnly:false,order:3},
+      dusk:{label:"dusk",bg1:"#2a1a3e",bg2:"#180e26",text:"#e8e4d8",adminOnly:false,order:4},
+      cream:{label:"cream",bg1:"#f5f0e8",bg2:"#ede7d7",text:"#2a2018",adminOnly:false,order:5},
+      petal:{label:"petal",bg1:"#f7e0ee",bg2:"#eed5e5",text:"#3a1f2e",adminOnly:true,order:6},
+      rose:{label:"rose",bg1:"#3d1525",bg2:"#220b15",text:"#e8e4d8",adminOnly:false,order:7},
+      ember:{label:"ember",bg1:"#3a1f0a",bg2:"#1f0e00",text:"#e8e4d8",adminOnly:false,order:8},
+      sage:{label:"sage",bg1:"#1e2a22",bg2:"#101a14",text:"#e8e4d8",adminOnly:false,order:9},
+      obsidian:{label:"obsidian",bg1:"#1f0c0c",bg2:"#0e0608",text:"#e8e4d8",adminOnly:false,order:10},
+      abyss:{label:"abyss",bg1:"#091a1f",bg2:"#040d10",text:"#e8e4d8",adminOnly:false,order:11},
+      storm:{label:"storm",bg1:"#111820",bg2:"#090e15",text:"#e8e4d8",adminOnly:false,order:12},
+      void:{label:"void",bg1:"#141418",bg2:"#0c0c10",text:"#e8e4d8",adminOnly:false,order:13}
+    };
+  }
+
+  async function saveConfigTags() {
+    await fetch(`${FIREBASE_URL}/config/tags.json`, {
+      method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(adminTags)
+    });
+  }
+  async function saveConfigColors() {
+    await fetch(`${FIREBASE_URL}/config/colors.json`, {
+      method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(adminColors)
+    });
+  }
+
+  // ── Render tagów ──
+  function renderTagsManager() {
+    const mgr = document.getElementById("tags-manager"); if (!mgr) return;
+    if (!adminTags.length) { mgr.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-faint);">Brak kategorii.</div>`; return; }
+    mgr.innerHTML = "";
+    adminTags.forEach((t, i) => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:8px;";
+      row.innerHTML = `
+        <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-faint);width:20px;text-align:right;">${i+1}.</span>
+        <input type="text" class="edit-input" value="${esc(t.label)}" data-id="${esc(t.id)}"
+          style="flex:1;max-width:200px;" placeholder="etykieta" />
+        <button class="q-btn" data-mv="up" data-i="${i}" title="W górę" ${i===0?"disabled":""}>↑</button>
+        <button class="q-btn" data-mv="down" data-i="${i}" title="W dół" ${i===adminTags.length-1?"disabled":""}>↓</button>
+        <button class="q-btn del" data-del="${esc(t.id)}" title="Usuń">✕</button>`;
+      // Zmiana etykiety (rename)
+      const inp = row.querySelector("input");
+      inp.addEventListener("change", () => renameTag(t.id, inp.value.trim()));
+      // Góra / dół
+      row.querySelectorAll("[data-mv]").forEach(btn => btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.i);
+        const dir = btn.dataset.mv === "up" ? -1 : 1;
+        const tmp = adminTags[idx]; adminTags[idx] = adminTags[idx+dir]; adminTags[idx+dir] = tmp;
+        adminTags.forEach((t,k) => t.order = k);
+        saveConfigTags().then(() => { renderTagsManager(); refreshAdminTagSelects(); showFb("tags-feedback","✓ Kolejność zapisana.","ok"); });
+      }));
+      // Usuń
+      row.querySelector("[data-del]").addEventListener("click", () => deleteTag(t.id));
+      mgr.appendChild(row);
+    });
+  }
+
+  async function renameTag(oldId, newLabel) {
+    if (!newLabel) { showFb("tags-feedback","Etykieta nie może być pusta.","err"); return; }
+    const tag = adminTags.find(t => t.id === oldId); if (!tag) return;
+    const oldLabel = tag.label;
+    tag.label = newLabel;
+    // Migracja — aktualizuj cytaty które mają stary tag
+    showFb("tags-feedback","Aktualizuję cytaty…","");
+    try {
+      const res  = await fetch(`${FIREBASE_URL}/quotes.json`);
+      const data = await res.json();
+      if (data) {
+        const toUpdate = Object.values(data).filter(q => q.tag === oldId);
+        // tag id się nie zmienia — tylko label w configu
+        // (cytaty trzymają id, nie label — więc wystarczy zapisać config)
+      }
+      await saveConfigTags();
+      renderTagsManager(); refreshAdminTagSelects();
+      showFb("tags-feedback",`✓ Nazwa zmieniona z „${oldLabel}" na „${newLabel}".`,"ok");
+    } catch(e) { showFb("tags-feedback","Błąd: "+e.message,"err"); }
+  }
+
+  async function deleteTag(id) {
+    const tag = adminTags.find(t=>t.id===id);
+    if (!tag) return;
+    // Sprawdź czy jakieś cytaty używają tego tagu
+    try {
+      const res  = await fetch(`${FIREBASE_URL}/quotes.json`);
+      const data = await res.json();
+      const count = data ? Object.values(data).filter(q=>q.tag===id).length : 0;
+      const msg   = count > 0
+        ? `Usunąć kategorię „${tag.label}"?\n\nUwaga: ${count} cytat${count===1?"":"ów"} ma tę kategorię — pozostaną w bazie z nierozpoznaną kategorią.`
+        : `Usunąć kategorię „${tag.label}"?`;
+      if (!confirm(msg)) return;
+    } catch(e) { if (!confirm(`Usunąć kategorię „${tag.label}"?`)) return; }
+    adminTags = adminTags.filter(t=>t.id!==id);
+    adminTags.forEach((t,k)=>t.order=k);
+    await saveConfigTags();
+    renderTagsManager(); refreshAdminTagSelects();
+    showFb("tags-feedback",`✓ Kategoria „${tag.label}" usunięta.`,"ok");
+  }
+
+  async function addTag() {
+    const idInp    = document.getElementById("new-tag-id");
+    const labelInp = document.getElementById("new-tag-label");
+    const id       = idInp.value.trim().toLowerCase().replace(/\s+/g,"-");
+    const label    = labelInp.value.trim();
+    if (!id || !label) { showFb("tags-feedback","Wypełnij klucz i etykietę.","err"); return; }
+    if (adminTags.find(t=>t.id===id)) { showFb("tags-feedback","Kategoria o tym kluczu już istnieje.","err"); return; }
+    adminTags.push({ id, label, order: adminTags.length });
+    await saveConfigTags();
+    idInp.value=""; labelInp.value="";
+    renderTagsManager(); refreshAdminTagSelects();
+    showFb("tags-feedback",`✓ Kategoria „${label}" dodana.`,"ok");
+  }
+
+  // ── Render kolorów ──
+  function renderColorsManager() {
+    const mgr = document.getElementById("colors-manager"); if (!mgr) return;
+    const sorted = Object.entries(adminColors).sort(([,a],[,b])=>(a.order||0)-(b.order||0));
+    mgr.innerHTML = "";
+    sorted.forEach(([key, c], i) => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;";
+      const preview = `linear-gradient(90deg,${c.bg1},${c.bg2})`;
+      row.innerHTML = `
+        <div style="width:36px;height:36px;border-radius:6px;background:${preview};flex-shrink:0;border:1px solid rgba(255,255,255,0.1);"></div>
+        <input type="text" class="edit-input" value="${esc(c.label)}" data-ck="${esc(key)}" data-field="label" style="max-width:110px;" placeholder="nazwa" />
+        <input type="color" value="${c.bg1}" data-ck="${esc(key)}" data-field="bg1" style="width:36px;height:36px;border:none;background:none;cursor:pointer;" title="Kolor 1" />
+        <input type="color" value="${c.bg2}" data-ck="${esc(key)}" data-field="bg2" style="width:36px;height:36px;border:none;background:none;cursor:pointer;" title="Kolor 2" />
+        <input type="color" value="${c.text}" data-ck="${esc(key)}" data-field="text" style="width:36px;height:36px;border:none;background:none;cursor:pointer;" title="Kolor tekstu" />
+        <label style="display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text-dim);cursor:pointer;">
+          <input type="checkbox" data-ck="${esc(key)}" data-field="adminOnly" ${c.adminOnly?"checked":""} /> admin
+        </label>
+        <button class="q-btn" data-mv="up" data-ck="${esc(key)}" title="W górę" ${i===0?"disabled":""}>↑</button>
+        <button class="q-btn" data-mv="down" data-ck="${esc(key)}" title="W dół" ${i===sorted.length-1?"disabled":""}>↓</button>
+        <button class="q-btn del" data-del-c="${esc(key)}" title="Usuń">✕</button>`;
+
+      // Zmiana pól — debounced zapis
+      row.querySelectorAll("[data-field]").forEach(inp => {
+        const ev = inp.type === "checkbox" ? "change" : (inp.type === "color" ? "input" : "change");
+        inp.addEventListener(ev, () => {
+          const k = inp.dataset.ck, f = inp.dataset.field;
+          adminColors[k][f] = inp.type==="checkbox" ? inp.checked : inp.value;
+          if (f==="bg1"||f==="bg2"||f==="text") {
+            // Odśwież podgląd w wierszu
+            const swatch = row.querySelector("div");
+            swatch.style.background = `linear-gradient(90deg,${adminColors[k].bg1},${adminColors[k].bg2})`;
+          }
+          saveConfigColors().then(() => { refreshAdminColorSelect(); showFb("colors-feedback","✓ Zapisano.","ok"); });
+        });
+      });
+      // Kolejność
+      row.querySelectorAll("[data-mv]").forEach(btn => btn.addEventListener("click", () => {
+        const k   = btn.dataset.ck;
+        const dir = btn.dataset.mv === "up" ? -1 : 1;
+        const keys = Object.keys(adminColors).sort((a,b)=>(adminColors[a].order||0)-(adminColors[b].order||0));
+        const idx  = keys.indexOf(k);
+        if (idx+dir < 0 || idx+dir >= keys.length) return;
+        const tmp = adminColors[keys[idx]].order;
+        adminColors[keys[idx]].order   = adminColors[keys[idx+dir]].order;
+        adminColors[keys[idx+dir]].order = tmp;
+        saveConfigColors().then(() => { renderColorsManager(); refreshAdminColorSelect(); showFb("colors-feedback","✓ Kolejność zapisana.","ok"); });
+      }));
+      // Usuń
+      row.querySelector("[data-del-c]").addEventListener("click", () => deleteColor(key));
+      mgr.appendChild(row);
+    });
+  }
+
+  async function deleteColor(key) {
+    const c = adminColors[key]; if (!c) return;
+    try {
+      const res  = await fetch(`${FIREBASE_URL}/quotes.json`);
+      const data = await res.json();
+      const count = data ? Object.values(data).filter(q=>q.color===key).length : 0;
+      const msg   = count > 0
+        ? `Usunąć kolor „${c.label}"?\n\nUwaga: ${count} cytat${count===1?"":"ów"} używa tego koloru — wyświetlą się z kolorem domyślnym.`
+        : `Usunąć kolor „${c.label}"?`;
+      if (!confirm(msg)) return;
+    } catch(e) { if (!confirm(`Usunąć kolor „${c.label}"?`)) return; }
+    delete adminColors[key];
+    await saveConfigColors();
+    renderColorsManager(); refreshAdminColorSelect();
+    showFb("colors-feedback",`✓ Kolor „${c.label}" usunięty.`,"ok");
+  }
+
+  async function addColor() {
+    const key   = document.getElementById("nc-key").value.trim().toLowerCase().replace(/\s+/g,"-");
+    const label = document.getElementById("nc-label").value.trim();
+    const bg1   = document.getElementById("nc-bg1").value;
+    const bg2   = document.getElementById("nc-bg2").value;
+    const text  = document.getElementById("nc-text").value;
+    const admin = document.getElementById("nc-admin-only").checked;
+    if (!key || !label) { showFb("colors-feedback","Wypełnij klucz i etykietę.","err"); return; }
+    if (adminColors[key]) { showFb("colors-feedback","Kolor o tym kluczu już istnieje.","err"); return; }
+    const maxOrder = Math.max(0, ...Object.values(adminColors).map(c=>c.order||0));
+    adminColors[key] = { label, bg1, bg2, text, adminOnly:admin, order:maxOrder+1 };
+    await saveConfigColors();
+    document.getElementById("nc-key").value="";
+    document.getElementById("nc-label").value="";
+    renderColorsManager(); refreshAdminColorSelect();
+    showFb("colors-feedback",`✓ Kolor „${label}" dodany.`,"ok");
+  }
+
+  function updateColorPreview() {
+    const bg1  = document.getElementById("nc-bg1").value;
+    const bg2  = document.getElementById("nc-bg2").value;
+    const text = document.getElementById("nc-text").value;
+    const prev = document.getElementById("nc-preview");
+    prev.style.background = `linear-gradient(135deg,${bg1},${bg2})`;
+    prev.style.color = text;
+  }
+
+  // ── Odśwież selecty w zakładce Cytaty po zmianie configa ──
+  function refreshAdminColorSelect() {
+    // Select "Nowy cytat"
+    const sel = document.getElementById("new-color"); if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = "";
+    Object.entries(adminColors).sort(([,a],[,b])=>(a.order||0)-(b.order||0)).forEach(([k,c])=>{
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = c.adminOnly ? `🔒 ${c.label}` : c.label;
+      if (k===cur) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    // Selecty w formularzach edycji istniejących cytatów (jeśli otwarte)
+    document.querySelectorAll("[id^='ei-color-']").forEach(s => {
+      const cur2 = s.value;
+      s.innerHTML = "";
+      Object.entries(adminColors).sort(([,a],[,b])=>(a.order||0)-(b.order||0)).forEach(([k,c])=>{
+        const opt = document.createElement("option");
+        opt.value = k; opt.textContent = c.adminOnly ? `🔒 ${c.label}` : c.label;
+        if (k===cur2) opt.selected=true;
+        s.appendChild(opt);
+      });
+    });
+  }
+
+  function refreshAdminTagSelects() {
+    // Select "Nowy cytat"
+    const sel = document.getElementById("new-tag"); if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = "";
+    adminTags.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t.id; opt.textContent = t.label;
+      if (t.id===cur) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    // Filtry w toolbarze
+    const toolbar = document.querySelector(".toolbar");
+    if (toolbar) {
+      toolbar.querySelectorAll("[data-qf]:not([data-qf='wszystkie'])").forEach(b=>b.remove());
+      adminTags.forEach(t => {
+        const btn = document.createElement("button");
+        btn.className = "filt-btn"; btn.dataset.qf = t.id; btn.textContent = t.label;
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-qf]").forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active"); qFilter=t.id; renderQuotes();
+        });
+        toolbar.appendChild(btn);
+      });
+    }
+    // Selecty edycji
+    document.querySelectorAll("[id^='ei-tag-']").forEach(s => {
+      const cur2 = s.value; s.innerHTML = "";
+      adminTags.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id; opt.textContent = t.label;
+        if (t.id===cur2) opt.selected=true;
+        s.appendChild(opt);
+      });
+    });
+  }
+
+  function showFb(id, msg, type) {
+    const el = document.getElementById(id); if (!el) return;
+    el.textContent = msg;
+    el.className = "settings-feedback" + (type ? " "+type : "");
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent=""; el.className="settings-feedback"; }, 4000);
+  }
+
   function esc(str){return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
   let _tt; function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove("show"),2800);}
 

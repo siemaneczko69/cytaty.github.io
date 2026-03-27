@@ -23,21 +23,7 @@
   --radius-lg: 20px;
   --shadow:    0 8px 40px rgba(0,0,0,0.6);
   --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
-
-  /* Card color themes */
-  --card-ink:    linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  --card-wine:   linear-gradient(135deg, #4a0e0e 0%, #2d0a0a 100%);
-  --card-forest: linear-gradient(135deg, #0d2b1e 0%, #081a12 100%);
-  --card-ocean:  linear-gradient(135deg, #0a1f3a 0%, #060f1d 100%);
-  --card-dusk:   linear-gradient(135deg, #2a1a3e 0%, #180e26 100%);
-  --card-cream:  linear-gradient(135deg, #f5f0e8 0%, #ede7d7 100%);
-  --card-rose:   linear-gradient(135deg, #3d1525 0%, #220b15 100%);
-  --card-ember:  linear-gradient(135deg, #3a1f0a 0%, #1f0e00 100%);
-  --card-sage:     linear-gradient(135deg, #1e2a22 0%, #101a14 100%);
-  --card-obsidian: linear-gradient(135deg, #1f0c0c 0%, #0e0608 100%);
-  --card-abyss:    linear-gradient(135deg, #091a1f 0%, #040d10 100%);
-  --card-storm:    linear-gradient(135deg, #111820 0%, #090e15 100%);
-  --card-void:     linear-gradient(135deg, #141418 0%, #0c0c10 100%);
+  /* Card colors są generowane dynamicznie przez JS (injectColorCSS) */
 }
 
 /* ─── Reset & Base ─── */
@@ -117,19 +103,6 @@ body {
   transition: var(--transition); opacity: 0.4;
 }
 .nav-admin-link:hover { color: var(--gold); opacity: 1; background: var(--gold-dim); }
-
-/* ─── Kolor petal (różowo-pastelowy, tylko via admin) ─── */
-.quote-card[data-color="petal"] {
-  background: linear-gradient(135deg, #f7e0ee 0%, #eed5e5 100%);
-  color: #3a1f2e;
-}
-.quote-card[data-color="petal"] .quote-meta,
-.quote-card[data-color="petal"] .quote-author-line { color: rgba(58,31,46,0.6); }
-.quote-card[data-color="petal"] .quote-tag { color: rgba(58,31,46,0.5); border-color: rgba(58,31,46,0.2); }
-.quote-card[data-color="petal"] .action-btn { color: rgba(58,31,46,0.55); }
-.quote-card[data-color="petal"] .action-btn:hover { color: #3a1f2e; background: rgba(58,31,46,0.08); }
-.quote-card[data-color="petal"] .action-btn.liked { color: #c0396a; }
-.quote-card[data-color="petal"] .quote-mark { color: #b0426a; }
 
 /* ─── Views ─── */
 .main { position: relative; z-index: 1; }
@@ -224,26 +197,7 @@ body {
 }
 .quote-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
 
-/* Card colors */
-.quote-card[data-color="ink"]    { background: var(--card-ink); }
-.quote-card[data-color="wine"]   { background: var(--card-wine); }
-.quote-card[data-color="forest"] { background: var(--card-forest); }
-.quote-card[data-color="ocean"]  { background: var(--card-ocean); }
-.quote-card[data-color="dusk"]   { background: var(--card-dusk); }
-.quote-card[data-color="cream"]  { background: var(--card-cream); color: #2a2018; }
-.quote-card[data-color="rose"]   { background: var(--card-rose); }
-.quote-card[data-color="ember"]  { background: var(--card-ember); }
-.quote-card[data-color="sage"]     { background: var(--card-sage); }
-.quote-card[data-color="obsidian"] { background: var(--card-obsidian); }
-.quote-card[data-color="abyss"]    { background: var(--card-abyss); }
-.quote-card[data-color="storm"]    { background: var(--card-storm); }
-.quote-card[data-color="void"]     { background: var(--card-void); }
-.quote-card[data-color="cream"] .quote-meta,
-.quote-card[data-color="cream"] .quote-author-line { color: rgba(42,32,24,0.6); }
-.quote-card[data-color="cream"] .quote-tag { color: rgba(42,32,24,0.5); border-color: rgba(42,32,24,0.2); }
-.quote-card[data-color="cream"] .action-btn { color: rgba(42,32,24,0.55); }
-.quote-card[data-color="cream"] .action-btn:hover { color: #2a2018; background: rgba(42,32,24,0.08); }
-.quote-card[data-color="cream"] .action-btn.liked { color: #b84a2a; }
+/* Card colors — generowane dynamicznie przez app.js (injectColorCSS) */
 
 .quote-mark {
   font-family: 'Playfair Display', serif;
@@ -252,7 +206,6 @@ body {
   margin-bottom: -12px; display: block;
   font-style: italic;
 }
-.quote-card[data-color="cream"] .quote-mark { color: #8b6914; }
 
 .quote-body {
   font-family: 'Playfair Display', serif;
