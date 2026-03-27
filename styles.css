@@ -108,6 +108,29 @@ body {
 .nav-btn:hover { color: var(--text); border-color: var(--border); background: var(--surface); }
 .nav-btn.active { color: var(--gold); border-color: var(--gold-dim); background: var(--gold-dim); }
 
+/* Admin link — dyskretna ikonka w nagłówku */
+.nav-admin-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  color: var(--text-faint); text-decoration: none;
+  font-size: 0.9rem; border-radius: 6px;
+  transition: var(--transition); opacity: 0.4;
+}
+.nav-admin-link:hover { color: var(--gold); opacity: 1; background: var(--gold-dim); }
+
+/* ─── Kolor petal (różowo-pastelowy, tylko via admin) ─── */
+.quote-card[data-color="petal"] {
+  background: linear-gradient(135deg, #f7e0ee 0%, #eed5e5 100%);
+  color: #3a1f2e;
+}
+.quote-card[data-color="petal"] .quote-meta,
+.quote-card[data-color="petal"] .quote-author-line { color: rgba(58,31,46,0.6); }
+.quote-card[data-color="petal"] .quote-tag { color: rgba(58,31,46,0.5); border-color: rgba(58,31,46,0.2); }
+.quote-card[data-color="petal"] .action-btn { color: rgba(58,31,46,0.55); }
+.quote-card[data-color="petal"] .action-btn:hover { color: #3a1f2e; background: rgba(58,31,46,0.08); }
+.quote-card[data-color="petal"] .action-btn.liked { color: #c0396a; }
+.quote-card[data-color="petal"] .quote-mark { color: #b0426a; }
+
 /* ─── Views ─── */
 .main { position: relative; z-index: 1; }
 .view { display: none; }

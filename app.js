@@ -271,15 +271,19 @@ function openModal(q) {
     ink:"linear-gradient(135deg,#1a1a2e,#16213e)", wine:"linear-gradient(135deg,#4a0e0e,#2d0a0a)",
     forest:"linear-gradient(135deg,#0d2b1e,#081a12)", ocean:"linear-gradient(135deg,#0a1f3a,#060f1d)",
     dusk:"linear-gradient(135deg,#2a1a3e,#180e26)", cream:"linear-gradient(135deg,#f5f0e8,#ede7d7)",
+    petal:"linear-gradient(135deg,#f7e0ee,#eed5e5)",
     rose:"linear-gradient(135deg,#3d1525,#220b15)", ember:"linear-gradient(135deg,#3a1f0a,#1f0e00)",
     sage:"linear-gradient(135deg,#1e2a22,#101a14)", obsidian:"linear-gradient(135deg,#1f0c0c,#0e0608)",
     abyss:"linear-gradient(135deg,#091a1f,#040d10)", storm:"linear-gradient(135deg,#111820,#090e15)",
     void:"linear-gradient(135deg,#141418,#0c0c10)"
   };
-  const isLight = q.color === "cream";
+  const isLight = q.color === "cream" || q.color === "petal";
   card.style.background = colorMap[q.color] || colorMap.ink;
-  card.style.color = isLight ? "#2a2018" : "#e8e4d8";
-  document.getElementById("render-text").textContent   = q.text;
+  card.style.color = isLight ? (q.color === "petal" ? "#3a1f2e" : "#2a2018") : "#e8e4d8";
+  // Fix: zachowaj spacje i nowe linie w generowanej grafice
+  const renderTextEl = document.getElementById("render-text");
+  renderTextEl.style.whiteSpace = "pre-wrap";
+  renderTextEl.textContent      = q.text;
   document.getElementById("render-author").textContent = "— " + q.author;
   document.getElementById("render-tag").textContent    = q.tag;
   document.getElementById("modal-overlay").classList.remove("hidden");
@@ -569,21 +573,24 @@ function renderRandomCard() {
     ink:"linear-gradient(135deg,#1a1a2e,#16213e)", wine:"linear-gradient(135deg,#4a0e0e,#2d0a0a)",
     forest:"linear-gradient(135deg,#0d2b1e,#081a12)", ocean:"linear-gradient(135deg,#0a1f3a,#060f1d)",
     dusk:"linear-gradient(135deg,#2a1a3e,#180e26)", cream:"linear-gradient(135deg,#f5f0e8,#ede7d7)",
+    petal:"linear-gradient(135deg,#f7e0ee,#eed5e5)",
     rose:"linear-gradient(135deg,#3d1525,#220b15)", ember:"linear-gradient(135deg,#3a1f0a,#1f0e00)",
     sage:"linear-gradient(135deg,#1e2a22,#101a14)", obsidian:"linear-gradient(135deg,#1f0c0c,#0e0608)",
     abyss:"linear-gradient(135deg,#091a1f,#040d10)", storm:"linear-gradient(135deg,#111820,#090e15)",
     void:"linear-gradient(135deg,#141418,#0c0c10)"
   };
-  const isLight   = q.color === "cream";
-  const cardStyle = `background:${colorMap[q.color]||colorMap.ink};color:${isLight?"#2a2018":"#e8e4d8"};`;
+  const isLight   = q.color === "cream" || q.color === "petal";
+  const textColor = isLight ? (q.color === "petal" ? "#3a1f2e" : "#2a2018") : "#e8e4d8";
+  const dimColor  = isLight ? "rgba(42,32,24,0.6)" : "rgba(232,228,216,0.6)";
+  const cardStyle = `background:${colorMap[q.color]||colorMap.ink};color:${textColor};`;
 
   randomOverlay.innerHTML = `
     <div class="random-card-wrap">
       <div class="random-card" style="${cardStyle}">
-        <span class="random-quote-mark">&ldquo;</span>
-        <p class="random-text">${escapeHTML(q.text)}</p>
-        <div class="random-author">— ${escapeHTML(q.author)}</div>
-        <span class="random-tag">${escapeHTML(q.tag)}</span>
+        <span class="random-quote-mark" style="color:${isLight?'#8b6914':'var(--gold)'}">&ldquo;</span>
+        <p class="random-text" style="color:${textColor};white-space:pre-wrap;">${escapeHTML(q.text)}</p>
+        <div class="random-author" style="color:${dimColor}">— ${escapeHTML(q.author)}</div>
+        <span class="random-tag" style="color:${dimColor};border-color:${isLight?'rgba(42,32,24,0.25)':'rgba(255,255,255,0.15)'};">${escapeHTML(q.tag)}</span>
       </div>
       <div class="random-counter">${randomIdx + 1} / ${randomQueue.length}</div>
     </div>
