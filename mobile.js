@@ -562,6 +562,36 @@ function initSheetDrag() {
   });
 }
 
+
+// ─── Pobierz grafikę ───
+async function downloadQuoteImage() {
+  const card = document.getElementById("quote-render-card");
+  const btn  = document.getElementById("sheet-download-btn");
+  if (!btn) return;
+  btn.textContent = "Generuję…"; btn.disabled = true;
+  try {
+    const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
+    const radius = 20 * 2;
+    const out = document.createElement("canvas");
+    out.width = canvas.width; out.height = canvas.height;
+    const ctx = out.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(radius, 0); ctx.lineTo(out.width - radius, 0);
+    ctx.quadraticCurveTo(out.width, 0, out.width, radius);
+    ctx.lineTo(out.width, out.height - radius);
+    ctx.quadraticCurveTo(out.width, out.height, out.width - radius, out.height);
+    ctx.lineTo(radius, out.height);
+    ctx.quadraticCurveTo(0, out.height, 0, out.height - radius);
+    ctx.lineTo(0, radius); ctx.quadraticCurveTo(0, 0, radius, 0);
+    ctx.closePath(); ctx.clip(); ctx.drawImage(canvas, 0, 0);
+    const a = document.createElement("a");
+    a.download = "cytat-glosy-swiata.png";
+    a.href = out.toDataURL("image/png");
+    a.click();
+  } catch(e) { showToast("Błąd generowania obrazka."); }
+  btn.textContent = "⬇ Pobierz grafikę"; btn.disabled = false;
+}
+
 // ─── Export ───
 function exportJSON(){ dl("cytaty.json",JSON.stringify(quotes,null,2),"application/json"); }
 function exportCSV(){
@@ -663,6 +693,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ()=>showToast("✓ Skopiowano!"),()=>showToast("Błąd kopiowania.")
     );
   });
+  document.getElementById("sheet-download-btn").addEventListener("click", downloadQuoteImage);
 
   // Download btn (sheet doesn't have it, but render card is there for compatibility)
   // Contact
