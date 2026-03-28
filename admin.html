@@ -111,6 +111,7 @@
     .q-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 5px 11px; border-radius: 6px; cursor: pointer; transition: var(--transition); white-space: nowrap; }
     .q-btn:hover { border-color: var(--gold); color: var(--gold); }
     .q-btn.del:hover { border-color: var(--accent); color: var(--accent); }
+    .q-btn.feature-btn.featured { border-color: rgba(201,168,76,0.5); color: var(--gold); background: rgba(201,168,76,0.08); }
     .color-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
 
     /* EDIT FORM */
@@ -230,6 +231,7 @@
         <div class="stat-pill"><strong id="stat-total">—</strong>łącznie</div>
         <div class="stat-pill"><strong id="stat-likes">—</strong>polubień</div>
         <div class="stat-pill"><strong id="stat-tags">—</strong>kategorii</div>
+        <div class="stat-pill"><strong id="stat-featured">—</strong>wyróżnionych</div>
       </div>
       <div class="add-quote-section">
         <div class="add-quote-title" id="add-toggle"><span id="add-arrow">▶</span> Dodaj nowy cytat</div>
@@ -251,6 +253,7 @@
       <div class="toolbar">
         <input type="text" class="toolbar-search" id="q-search" placeholder="Szukaj cytatu lub autora…" />
         <button class="filt-btn active" data-qf="wszystkie">Wszystkie</button>
+        <button class="filt-btn" data-qf="wyróżnione">⭐ Wyróżnione</button>
         <!-- filtry kategorii wypełniane dynamicznie przez loadConfig() -->
       </div>
       <div class="quotes-list" id="quotes-list">
@@ -491,12 +494,14 @@
   function renderQuotes() {
     const list=document.getElementById("quotes-list");
     let filtered=[...quotes];
-    if(qFilter!=="wszystkie") filtered=filtered.filter(q=>q.tag===qFilter);
+    if(qFilter==="wyróżnione") filtered=filtered.filter(q=>q.featured);
+    else if(qFilter!=="wszystkie") filtered=filtered.filter(q=>q.tag===qFilter);
     if(qSearch.trim()){const s=qSearch.toLowerCase();filtered=filtered.filter(q=>q.text.toLowerCase().includes(s)||(q.author||"").toLowerCase().includes(s));}
     document.getElementById("stat-total").textContent=quotes.length;
     document.getElementById("stat-likes").textContent=quotes.reduce((s,q)=>s+(q.likes||0),0);
     document.getElementById("stat-tags").textContent=[...new Set(quotes.map(q=>q.tag))].length;
-    if(!filtered.length){list.innerHTML=`<div class="empty-panel">Brak cytatów${qFilter!=="wszystkie"?` w kategorii „${esc(qFilter)}"`:""}.${qSearch?" Zmień wyszukiwanie.":""}</div>`;return;}
+    document.getElementById("stat-featured").textContent=quotes.filter(q=>q.featured).length;
+    if(!filtered.length){list.innerHTML=`<div class="empty-panel">${qFilter==="wyróżnione"?"Brak wyróżnionych cytatów.":"Brak cytatów"+( qFilter!=="wszystkie"?` w kategorii „${esc(qFilter)}"`:"")+"."}${qSearch?" Zmień wyszukiwanie.":""}</div>`;return;}
     list.innerHTML=""; filtered.forEach(q=>list.appendChild(buildQuoteCard(q)));
   }
 
@@ -528,9 +533,11 @@
             <span class="q-date">${q.date||""}</span>
             <span class="q-likes">♡ ${q.likes||0}</span>
             <span class="q-tag" style="border-color:${dot}"><span class="color-dot" style="background:${dot}"></span>${esc(colorLabel)}</span>
+            ${q.featured ? `<span class="q-tag" style="border-color:rgba(201,168,76,0.5);color:var(--gold);">⭐ Wyróżniony</span>` : ""}
           </div>
         </div>
         <div class="q-actions">
+          <button class="q-btn feature-btn ${q.featured?"featured":""}" data-id="${q.id}">${q.featured ? "★ Cofnij" : "☆ Wyróżnij"}</button>
           <button class="q-btn edit-btn" data-id="${q.id}">✏ Edytuj</button>
           <button class="q-btn del" data-id="${q.id}">✕ Usuń</button>
         </div>
@@ -552,6 +559,7 @@
     card.querySelector(".del").addEventListener("click",()=>deleteQuote(q.id));
     card.querySelector(".edit-cancel").addEventListener("click",()=>toggleEdit(q.id,false));
     card.querySelector(".edit-save").addEventListener("click",()=>saveQuote(q.id));
+    card.querySelector(".feature-btn").addEventListener("click",()=>toggleFeatured(q.id));
     const ta=card.querySelector(`#ei-text-${q.id}`), ch=card.querySelector(`#ei-char-${q.id}`);
     ta.addEventListener("input",()=>{ch.textContent=`${ta.value.length} / 280`;});
     return card;
@@ -583,6 +591,19 @@
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       quotes=quotes.filter(q=>q.id!==id); renderQuotes(); showToast("✓ Cytat usunięty.");
     } catch(e) { showToast("Błąd usuwania: "+e.message); }
+  }
+
+  async function toggleFeatured(id) {
+    const q = quotes.find(x => x.id === id); if (!q) return;
+    const newVal = !q.featured;
+    try {
+      await fetch(quotesUrl(`/${id}/featured`), {
+        method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(newVal)
+      });
+      q.featured = newVal;
+      renderQuotes();
+      showToast(newVal ? "⭐ Cytat wyróżniony!" : "✓ Wyróżnienie cofnięte.");
+    } catch(e) { showToast("Błąd: " + e.message); }
   }
 
   async function adminAddQuote() {

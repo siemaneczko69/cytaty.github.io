@@ -227,11 +227,21 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px;
 }
+.card-tags {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
 .quote-tag {
   font-family: 'DM Mono', monospace; font-size: 0.65rem;
   border: 1px solid rgba(255,255,255,0.15);
   padding: 3px 9px; border-radius: 20px;
   color: var(--text-dim); letter-spacing: 0.04em;
+}
+.quote-featured-badge {
+  font-family: 'DM Mono', monospace; font-size: 0.62rem;
+  padding: 3px 9px; border-radius: 20px; letter-spacing: 0.03em;
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.45);
+  color: var(--gold);
 }
 .card-actions { display: flex; gap: 8px; align-items: center; }
 .action-btn {

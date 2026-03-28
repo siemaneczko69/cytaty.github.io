@@ -292,7 +292,8 @@ function renderQuotes() {
   const grid  = document.getElementById("quotes-grid");
   const empty = document.getElementById("empty-state");
   let filtered = [...quotes].sort((a,b) => new Date(b.date) - new Date(a.date));
-  if (currentFilter === "popularne") filtered = [...filtered].sort((a,b) => b.likes - a.likes);
+  if (currentFilter === "popularne")   filtered = [...filtered].sort((a,b) => b.likes - a.likes);
+  if (currentFilter === "wyróżnione")  filtered = filtered.filter(q => q.featured);
   if (currentCategory) filtered = filtered.filter(q => q.tag === currentCategory);
   if (currentSearch.trim()) {
     const s = currentSearch.toLowerCase();
@@ -316,13 +317,17 @@ function buildCard(q, delay) {
   card.style.animationDelay = `${delay * 0.05}s`;
   // Etykieta tagu z configa (lub raw id jeśli nie znaleziono)
   const tagLabel = (CONFIG.tags.find(t => t.id === q.tag) || {}).label || q.tag;
+  const featuredBadge = q.featured ? `<span class="quote-featured-badge">⭐ Wyróżnione</span>` : "";
   card.innerHTML = `
     <span class="quote-meta">${q.date ? formatDate(q.date) : ""}</span>
     <span class="quote-mark">&ldquo;</span>
     <p class="quote-body">${escapeHTML(q.text)}</p>
     <div class="quote-author-line">— ${escapeHTML(q.author)}</div>
     <div class="card-footer">
-      <span class="quote-tag">${escapeHTML(tagLabel)}</span>
+      <div class="card-tags">
+        <span class="quote-tag">${escapeHTML(tagLabel)}</span>
+        ${featuredBadge}
+      </div>
       <div class="card-actions">
         <button class="action-btn like-btn ${q.likedByMe ? "liked" : ""}" data-id="${q.id}">
           ${q.likedByMe ? "❤" : "♡"} <span>${q.likes}</span>
