@@ -6,6 +6,15 @@
   <title>Cytaty — Głosy Świata</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="styles.css" />
+  <!-- Mobile redirect -->
+  <script>
+    (function(){
+      if (sessionStorage.getItem("glosy_force_desktop")) return;
+      var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+                   || window.innerWidth < 768;
+      if (mobile) window.location.replace("mobile.html" + window.location.search);
+    })();
+  </script>
 </head>
 <body>
 
