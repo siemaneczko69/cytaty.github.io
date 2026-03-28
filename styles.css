@@ -243,17 +243,19 @@ body {
   border: 1px solid rgba(201,168,76,0.45);
   color: var(--gold);
 }
-.card-actions { display: flex; gap: 8px; align-items: center; }
+.card-actions { display: flex; gap: 6px; align-items: center; }
 .action-btn {
   background: none; border: none; cursor: pointer;
-  color: var(--text-dim); font-size: 0.8rem;
-  padding: 4px 8px; border-radius: 6px;
-  transition: var(--transition); display: flex; align-items: center; gap: 4px;
-  font-family: 'DM Mono', monospace;
+  color: var(--text-dim); font-size: 0.78rem;
+  padding: 4px 7px; border-radius: 6px;
+  transition: var(--transition); display: flex; align-items: center; gap: 3px;
+  font-family: 'DM Mono', monospace; white-space: nowrap;
 }
 .action-btn:hover { color: var(--text); background: rgba(255,255,255,0.07); }
-.action-btn.liked { color: #e8735a; }
-.action-btn.delete-btn:hover { color: #e8735a; }
+.action-btn.reacted { color: var(--gold); }
+.action-btn.reaction-btn.reacted { background: rgba(201,168,76,0.1); }
+.action-btn.comment-count-btn { opacity: 0.7; }
+.action-btn.comment-count-btn:hover { opacity: 1; }
 
 .quote-meta {
   font-family: 'DM Mono', monospace; font-size: 0.6rem;
@@ -540,15 +542,15 @@ body {
   letter-spacing: 0.04em;
 }
 .random-next-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-.random-like-btn {
+.random-reaction-btn {
   background: none; border: 1px solid var(--border);
   color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.8rem;
-  padding: 12px 20px; border-radius: var(--radius);
+  padding: 10px 16px; border-radius: var(--radius);
   cursor: pointer; transition: var(--transition);
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 5px;
 }
-.random-like-btn:hover { border-color: #e8735a; color: #e8735a; }
-.random-like-btn.liked { border-color: #e8735a; color: #e8735a; }
+.random-reaction-btn:hover { border-color: var(--gold); color: var(--gold); }
+.random-reaction-btn.reacted { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
 .random-close-btn {
   background: none; border: 1px solid var(--border);
   color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.78rem;

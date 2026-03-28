@@ -538,9 +538,14 @@
         </div>
         <div class="q-actions">
           <button class="q-btn feature-btn ${q.featured?"featured":""}" data-id="${q.id}">${q.featured ? "★ Cofnij" : "☆ Wyróżnij"}</button>
+          <button class="q-btn history-btn" data-id="${q.id}">⏱ Historia</button>
           <button class="q-btn edit-btn" data-id="${q.id}">✏ Edytuj</button>
           <button class="q-btn del" data-id="${q.id}">✕ Usuń</button>
         </div>
+      </div>
+      <div class="q-history-panel" id="history-${q.id}" style="display:none;background:var(--bg-2);border-top:1px solid var(--border);padding:14px 18px;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--gold);margin-bottom:10px;">Historia zmian (max 2 poprzednie wersje)</div>
+        <div id="history-content-${q.id}" style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-faint);">Ładowanie…</div>
       </div>
       <div class="q-edit-form" id="edit-${q.id}">
         <div class="edit-row">
@@ -560,6 +565,7 @@
     card.querySelector(".edit-cancel").addEventListener("click",()=>toggleEdit(q.id,false));
     card.querySelector(".edit-save").addEventListener("click",()=>saveQuote(q.id));
     card.querySelector(".feature-btn").addEventListener("click",()=>toggleFeatured(q.id));
+    card.querySelector(".history-btn").addEventListener("click",()=>toggleHistory(q.id));
     const ta=card.querySelector(`#ei-text-${q.id}`), ch=card.querySelector(`#ei-char-${q.id}`);
     ta.addEventListener("input",()=>{ch.textContent=`${ta.value.length} / 280`;});
     return card;
@@ -575,13 +581,36 @@
     const newColor=document.getElementById(`ei-color-${id}`).value;
     if(!newText){showToast("Treść cytatu nie może być pusta!");return;}
     const btn=document.querySelector(`#edit-${id} .edit-save`); btn.textContent="Zapisuję…"; btn.disabled=true;
-    const payload={id:q.id,text:newText,author:newAuthor,tag:newTag,color:newColor,date:q.date};
+    // Zapisz historię PRZED nadpisaniem
+    await saveHistory(q);
+    const payload={id:q.id,text:newText,author:newAuthor,tag:newTag,color:newColor,date:q.date,featured:q.featured||false};
     try {
       const res=await fetch(quotesUrl(`/${id}`),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       Object.assign(q,{text:newText,author:newAuthor,tag:newTag,color:newColor});
       renderQuotes(); showToast("✓ Cytat zaktualizowany!");
     } catch(e) { showToast("Błąd: "+e.message); btn.textContent="Zapisz zmiany"; btn.disabled=false; }
+  }
+
+  async function saveHistory(q) {
+    try {
+      const res  = await fetch(`${FIREBASE_URL}/history/${q.id}.json`);
+      const data = await res.json() || {};
+      const newHistory = {};
+      if (data.v1) newHistory.v2 = data.v1;
+      newHistory.v1 = { text:q.text, author:q.author, tag:q.tag, color:q.color, savedAt:new Date().toISOString() };
+      await fetch(`${FIREBASE_URL}/history/${q.id}.json`, {
+        method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(newHistory)
+      });
+    } catch(e) { console.warn("saveHistory:", e); }
+  }
+
+  async function loadHistory(id) {
+    try {
+      const res  = await fetch(`${FIREBASE_URL}/history/${id}.json`);
+      const data = await res.json();
+      return data || null;
+    } catch(e) { return null; }
   }
 
   async function deleteQuote(id) {
@@ -603,6 +632,57 @@
       q.featured = newVal;
       renderQuotes();
       showToast(newVal ? "⭐ Cytat wyróżniony!" : "✓ Wyróżnienie cofnięte.");
+    } catch(e) { showToast("Błąd: " + e.message); }
+  }
+
+  async function toggleHistory(id) {
+    const panel   = document.getElementById(`history-${id}`);
+    const content = document.getElementById(`history-content-${id}`);
+    const btn     = document.querySelector(`.history-btn[data-id="${id}"]`);
+    if (!panel || !content) return;
+    const isOpen = panel.style.display !== "none";
+    if (isOpen) {
+      panel.style.display = "none";
+      btn.textContent = "⏱ Historia";
+      return;
+    }
+    panel.style.display = "block";
+    btn.textContent = "▲ Zwiń";
+    content.textContent = "Ładowanie…";
+    const history = await loadHistory(id);
+    if (!history || (!history.v1 && !history.v2)) {
+      content.innerHTML = `<span style="color:var(--text-faint);">Brak historii — cytat nie był jeszcze edytowany.</span>`;
+      return;
+    }
+    const renderVersion = (v, label) => {
+      if (!v) return "";
+      const d = v.savedAt ? new Date(v.savedAt).toLocaleString("pl-PL",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+      return `
+        <div style="margin-bottom:12px;padding:10px 14px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+          <div style="color:var(--gold);font-size:0.65rem;margin-bottom:6px;">${label} · ${d}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:0.82rem;font-style:italic;color:var(--text);margin-bottom:4px;">"${esc(v.text)}"</div>
+          <div style="font-size:0.68rem;color:var(--text-dim);">— ${esc(v.author||"?")} · ${esc(v.tag||"")} · ${esc(v.color||"")}</div>
+          <button class="q-btn restore-btn" style="margin-top:8px;font-size:0.62rem;" data-id="${id}" data-version="${label==="v1"?"v1":"v2"}">↩ Przywróć tę wersję</button>
+        </div>`;
+    };
+    content.innerHTML = renderVersion(history.v1,"v1") + renderVersion(history.v2,"v2");
+    content.querySelectorAll(".restore-btn").forEach(btn => {
+      btn.addEventListener("click", () => restoreVersion(id, history[btn.dataset.version]));
+    });
+  }
+
+  async function restoreVersion(id, v) {
+    if (!v) return;
+    if (!confirm(`Przywrócić wersję:\n"${v.text.slice(0,80)}…"\n\nAktualna wersja zostanie zapisana w historii.`)) return;
+    const q = quotes.find(x => x.id === id); if (!q) return;
+    await saveHistory(q);
+    const payload = { id:q.id, text:v.text, author:v.author, tag:v.tag, color:v.color, date:q.date, featured:q.featured||false };
+    try {
+      const res = await fetch(quotesUrl(`/${id}`), { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      Object.assign(q, { text:v.text, author:v.author, tag:v.tag, color:v.color });
+      renderQuotes();
+      showToast("✓ Wersja przywrócona!");
     } catch(e) { showToast("Błąd: " + e.message); }
   }
 

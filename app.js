@@ -41,8 +41,12 @@ const DEFAULT_TAGS = [
 function quotesUrl(path="")  { return `${FIREBASE_URL}/quotes${path}.json`; }
 function likesUrl(id)        { return `${FIREBASE_URL}/likes/${id}.json`; }
 function allLikesUrl()       { return `${FIREBASE_URL}/likes.json`; }
+function reactionsUrl(id,p="") { return `${FIREBASE_URL}/reactions/${id}${p}.json`; }
+function allReactionsUrl()   { return `${FIREBASE_URL}/reactions.json`; }
+function allCommentsUrl()    { return `${FIREBASE_URL}/comments.json`; }
 function suggestionsUrl(p="") { return `${FIREBASE_URL}/sugestie${p}.json`; }
 function configUrl(p="")     { return `${FIREBASE_URL}/config${p}.json`; }
+function historyUrl(id,p="") { return `${FIREBASE_URL}/history/${id}${p}.json`; }
 
 // ─── Ładowanie configa ───
 async function fetchConfig() {
@@ -81,6 +85,7 @@ function injectColorCSS() {
 .quote-card[data-color="${key}"] .quote-tag { color:${dim}; border-color:${dim}; }
 .quote-card[data-color="${key}"] .action-btn { color:${dim}; }
 .quote-card[data-color="${key}"] .action-btn:hover { color:${txt}; background:rgba(128,128,128,0.1); }
+.quote-card[data-color="${key}"] .action-btn.reacted { color:${markCol}; background:rgba(128,128,128,0.1); }
 .quote-card[data-color="${key}"] .quote-mark { color:${markCol}; }
 `;
   }
@@ -214,17 +219,36 @@ let selectedColor = "ink";
 async function fetchQuotes() {
   if (FIREBASE_URL === "WKLEJ_TUTAJ_URL_FIREBASE") { showConfigWarning(); return []; }
   try {
-    const [qRes, lRes] = await Promise.all([fetch(quotesUrl()), fetch(allLikesUrl())]);
+    const [qRes, lRes, rRes, cRes] = await Promise.all([
+      fetch(quotesUrl()), fetch(allLikesUrl()),
+      fetch(allReactionsUrl()), fetch(allCommentsUrl())
+    ]);
     if (!qRes.ok) throw new Error(`HTTP ${qRes.status}`);
     const qData = await qRes.json();
     const lData = lRes.ok ? await lRes.json() : {};
-    const likesMap = lData || {};
-    const myLikes  = getMyLikes();
-    if (!qData) { await seedDatabase(); return SEED_QUOTES.map(q => ({ ...q, likes:0, likedByMe:false })); }
+    const rData = rRes.ok ? await rRes.json() : {};
+    const cData = cRes.ok ? await cRes.json() : {};
+    const likesMap     = lData || {};
+    const reactionsMap = rData || {};
+    const myLikes      = getMyLikes();
+    const myReactions  = getMyReactions();
+
+    // Licznik komentarzy: ile kluczy w /comments/QUOTE_ID
+    const commentCounts = {};
+    if (cData) {
+      for (const [qid, obj] of Object.entries(cData)) {
+        commentCounts[qid] = obj ? Object.keys(obj).length : 0;
+      }
+    }
+
+    if (!qData) { await seedDatabase(); return []; }
     const arr = Object.values(qData).map(q => ({
       ...q,
-      likes:     likesMap[q.id] || 0,
-      likedByMe: myLikes.includes(q.id)
+      likes:        likesMap[q.id] || 0,
+      likedByMe:    myLikes.includes(q.id),
+      reactions:    reactionsMap[q.id] || { heart:0, haha:0, wow:0 },
+      myReaction:   myReactions[q.id] || null,
+      commentCount: commentCounts[q.id] || 0,
     }));
     arr.sort((a,b) => new Date(b.date) - new Date(a.date));
     return arr;
@@ -254,6 +278,27 @@ async function pushQuote(q) {
   }
 }
 
+// Zapisuje max 2 poprzednie wersje cytatu do /history/ID
+async function saveHistory(oldQuote) {
+  try {
+    const res  = await fetch(historyUrl(oldQuote.id));
+    const data = await res.json() || {};
+    // Przesuń: v2 → usuń, v1 → v2, nowa → v1
+    const newHistory = {};
+    if (data.v1) newHistory.v2 = data.v1;
+    newHistory.v1 = {
+      text:      oldQuote.text,
+      author:    oldQuote.author,
+      tag:       oldQuote.tag,
+      color:     oldQuote.color,
+      savedAt:   new Date().toISOString()
+    };
+    await fetch(historyUrl(oldQuote.id), {
+      method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(newHistory)
+    });
+  } catch(e) { console.warn("saveHistory failed:", e); }
+}
+
 async function updateLikes(id, newCount) {
   try {
     const res = await fetch(likesUrl(id), {
@@ -271,6 +316,12 @@ function getMyLikes() {
   try { return JSON.parse(localStorage.getItem("glosy_my_likes") || "[]"); } catch { return []; }
 }
 function saveMyLikes(arr) { localStorage.setItem("glosy_my_likes", JSON.stringify(arr)); }
+
+// Reakcje: { "QUOTE_ID": "heart" | "haha" | "wow" }
+function getMyReactions() {
+  try { return JSON.parse(localStorage.getItem("glosy_my_reactions") || "{}"); } catch { return {}; }
+}
+function saveMyReactions(obj) { localStorage.setItem("glosy_my_reactions", JSON.stringify(obj)); }
 
 function showConfigWarning() {
   document.getElementById("quotes-grid").innerHTML = `
@@ -292,7 +343,8 @@ function renderQuotes() {
   const grid  = document.getElementById("quotes-grid");
   const empty = document.getElementById("empty-state");
   let filtered = [...quotes].sort((a,b) => new Date(b.date) - new Date(a.date));
-  if (currentFilter === "popularne")   filtered = [...filtered].sort((a,b) => b.likes - a.likes);
+  const totalReactions = q => { const r=q.reactions||{}; return (r.heart||0)+(r.haha||0)+(r.wow||0); };
+  if (currentFilter === "popularne")   filtered = [...filtered].sort((a,b) => totalReactions(b) - totalReactions(a));
   if (currentFilter === "wyróżnione")  filtered = filtered.filter(q => q.featured);
   if (currentCategory) filtered = filtered.filter(q => q.tag === currentCategory);
   if (currentSearch.trim()) {
@@ -318,6 +370,8 @@ function buildCard(q, delay) {
   // Etykieta tagu z configa (lub raw id jeśli nie znaleziono)
   const tagLabel = (CONFIG.tags.find(t => t.id === q.tag) || {}).label || q.tag;
   const featuredBadge = q.featured ? `<span class="quote-featured-badge">⭐ Wyróżnione</span>` : "";
+  const r = q.reactions || { heart:0, haha:0, wow:0 };
+  const mr = q.myReaction;
   card.innerHTML = `
     <span class="quote-meta">${q.date ? formatDate(q.date) : ""}</span>
     <span class="quote-mark">&ldquo;</span>
@@ -329,38 +383,68 @@ function buildCard(q, delay) {
         ${featuredBadge}
       </div>
       <div class="card-actions">
-        <button class="action-btn like-btn ${q.likedByMe ? "liked" : ""}" data-id="${q.id}">
-          ${q.likedByMe ? "❤" : "♡"} <span>${q.likes}</span>
-        </button>
+        <button class="action-btn reaction-btn ${mr==="heart"?"reacted":""}" data-id="${q.id}" data-reaction="heart" title="Lubię to">❤ <span>${r.heart||0}</span></button>
+        <button class="action-btn reaction-btn ${mr==="haha"?"reacted":""}" data-id="${q.id}" data-reaction="haha" title="Śmieszne">😂 <span>${r.haha||0}</span></button>
+        <button class="action-btn reaction-btn ${mr==="wow"?"reacted":""}" data-id="${q.id}" data-reaction="wow" title="Mocne">🤔 <span>${r.wow||0}</span></button>
+        <button class="action-btn comment-count-btn" data-id="${q.id}" title="Komentarze">💬 <span>${q.commentCount||0}</span></button>
       </div>
     </div>`;
   card.addEventListener("click", e => { if (!e.target.closest(".action-btn")) openModal(q); });
-  card.querySelector(".like-btn").addEventListener("click", e => { e.stopPropagation(); toggleLike(q.id); });
+  card.querySelectorAll(".reaction-btn").forEach(btn => {
+    btn.addEventListener("click", e => { e.stopPropagation(); toggleReaction(q.id, btn.dataset.reaction); });
+  });
+  card.querySelector(".comment-count-btn").addEventListener("click", e => { e.stopPropagation(); openModal(q); });
   return card;
 }
 
 // ─── Actions ───
-async function toggleLike(id) {
+async function toggleReaction(id, type) {
   const q = quotes.find(x => x.id === id); if (!q) return;
-  const myLikes = getMyLikes();
-  if (q.likedByMe) {
-    q.likedByMe = false; q.likes = Math.max(0, q.likes - 1);
-    saveMyLikes(myLikes.filter(x => x !== id));
+  const myReactions = getMyReactions();
+  const current = myReactions[id]; // aktualna reakcja tego usera na ten cytat
+
+  if (!q.reactions) q.reactions = { heart:0, haha:0, wow:0 };
+
+  if (current === type) {
+    // Cofnij tę samą reakcję
+    q.reactions[type] = Math.max(0, (q.reactions[type]||0) - 1);
+    q.myReaction = null;
+    delete myReactions[id];
   } else {
-    q.likedByMe = true; q.likes += 1;
-    saveMyLikes([...myLikes, id]);
+    // Cofnij poprzednią reakcję jeśli była
+    if (current) q.reactions[current] = Math.max(0, (q.reactions[current]||0) - 1);
+    // Dodaj nową
+    q.reactions[type] = (q.reactions[type]||0) + 1;
+    q.myReaction = type;
+    myReactions[id] = type;
   }
+  saveMyReactions(myReactions);
   renderQuotes(); updateStats();
-  await updateLikes(id, q.likes);
+  // Zapisz do Firebase
+  try {
+    await fetch(reactionsUrl(id), {
+      method: "PUT", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(q.reactions)
+    });
+  } catch(e) { showToast("Błąd zapisu reakcji."); }
+}
+
+async function toggleLike(id) {
+  // Zachowane dla kompatybilności wstecznej — przekieruj na heart
+  toggleReaction(id, "heart");
 }
 
 function updateStats() {
   const el = document.getElementById("feed-stats"); if (!el) return;
-  const total = quotes.length, likes = quotes.reduce((s,q)=>s+(q.likes||0),0);
+  const total = quotes.length;
+  const reactions = quotes.reduce((s,q) => {
+    const r = q.reactions || {};
+    return s + (r.heart||0) + (r.haha||0) + (r.wow||0);
+  }, 0);
   if (total === 0) { el.textContent = ""; return; }
   const qWord = total===1?"cytat":total<5?"cytaty":"cytatów";
-  const lWord = likes===1?"polubienie":likes<5?"polubienia":"polubień";
-  el.textContent = `${total} ${qWord} · ${likes} ${lWord}`;
+  const rWord = reactions===1?"reakcja":reactions<5?"reakcje":"reakcji";
+  el.textContent = `${total} ${qWord} · ${reactions} ${rWord}`;
 }
 
 async function addQuote() {
@@ -639,6 +723,8 @@ function renderRandomCard() {
   const markColor = isLight ? adjustColor((CONFIG.colors[q.color]||{bg1:"#c9a84c"}).bg1, -60) : "#c9a84c";
   const tagLabel  = (CONFIG.tags.find(t=>t.id===q.tag)||{}).label || q.tag;
   const cardStyle = `background:${getColorGradient(q.color)};color:${textColor};`;
+  const r  = q.reactions || { heart:0, haha:0, wow:0 };
+  const mr = q.myReaction;
 
   randomOverlay.innerHTML = `
     <div class="random-card-wrap">
@@ -651,14 +737,18 @@ function renderRandomCard() {
       <div class="random-counter">${randomIdx + 1} / ${randomQueue.length}</div>
     </div>
     <div class="random-controls">
-      <button class="random-like-btn${liked?" liked":""}" id="r-like-btn">${liked?"❤":"♡"} ${q.likes||0}</button>
+      <button class="random-reaction-btn${mr==="heart"?" reacted":""}" id="r-heart-btn" data-r="heart">❤ ${r.heart||0}</button>
+      <button class="random-reaction-btn${mr==="haha"?" reacted":""}" id="r-haha-btn" data-r="haha">😂 ${r.haha||0}</button>
+      <button class="random-reaction-btn${mr==="wow"?" reacted":""}" id="r-wow-btn" data-r="wow">🤔 ${r.mocne||0}</button>
       <button class="random-next-btn" id="r-next-btn">Następny →</button>
       <button class="random-close-btn" id="r-close-btn">✕ Zamknij</button>
     </div>`;
 
   document.getElementById("r-next-btn").addEventListener("click", nextRandomCard);
   document.getElementById("r-close-btn").addEventListener("click", closeRandomMode);
-  document.getElementById("r-like-btn").addEventListener("click", () => { toggleLike(q.id); renderRandomCard(); });
+  randomOverlay.querySelectorAll(".random-reaction-btn").forEach(btn => {
+    btn.addEventListener("click", () => { toggleReaction(q.id, btn.dataset.r); renderRandomCard(); });
+  });
 }
 
 function nextRandomCard() {
