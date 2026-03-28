@@ -739,7 +739,7 @@ function renderRandomCard() {
     <div class="random-controls">
       <button class="random-reaction-btn${mr==="heart"?" reacted":""}" id="r-heart-btn" data-r="heart">❤ ${r.heart||0}</button>
       <button class="random-reaction-btn${mr==="haha"?" reacted":""}" id="r-haha-btn" data-r="haha">😂 ${r.haha||0}</button>
-      <button class="random-reaction-btn${mr==="wow"?" reacted":""}" id="r-wow-btn" data-r="wow">🤔 ${r.mocne||0}</button>
+      <button class="random-reaction-btn${mr==="wow"?" reacted":""}" id="r-wow-btn" data-r="wow">🤔 ${r.wow||0}</button>
       <button class="random-next-btn" id="r-next-btn">Następny →</button>
       <button class="random-close-btn" id="r-close-btn">✕ Zamknij</button>
     </div>`;
