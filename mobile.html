@@ -670,6 +670,68 @@
     .theme-popover-item-m:active { background: var(--gold-dim); }
     .theme-popover-item-m.active { color: var(--gold); border-color: var(--gold-dim); background: var(--gold-dim); }
     .theme-dot-m { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(128,128,128,0.25); }
+
+    /* ── Mini-profil autora (mobile) ── */
+    .profile-overlay {
+      position: fixed; inset: 0; z-index: 250;
+      background: var(--modal-bg,rgba(0,0,0,0.7)); backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .profile-overlay.hidden { display: none; }
+    .profile-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      width: 100%; max-height: 88dvh;
+      display: flex; flex-direction: column;
+      animation: cardIn 0.32s cubic-bezier(0.22,1,0.36,1);
+      overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom, 12px);
+    }
+    .profile-handle-wrap { padding: 10px 0 4px; display:flex; justify-content:center; flex-shrink:0; }
+    .profile-handle { width:40px; height:4px; border-radius:2px; background:rgba(255,255,255,0.18); }
+    .profile-header {
+      padding: 6px 20px 16px; border-bottom: 1px solid var(--border); flex-shrink:0;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .profile-close {
+      position: absolute; top: 14px; right: 16px;
+      background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer;
+    }
+    .profile-avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--gold-dim); border: 2px solid var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700;
+      color: var(--gold); flex-shrink: 0;
+    }
+    .profile-header-info { flex: 1; min-width: 0; }
+    .profile-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .profile-stats-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .profile-stat { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-dim); }
+    .profile-stat strong { color: var(--gold); font-size: 0.9rem; display: block; }
+    .profile-quotes-list {
+      overflow-y: auto; flex: 1; padding: 12px 16px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .profile-quote-item {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px; cursor: pointer;
+    }
+    .profile-quote-item:active { background: var(--surface-2); }
+    .profile-quote-text {
+      font-family: 'Playfair Display', serif; font-size: 0.9rem; font-style: italic;
+      line-height: 1.5; color: var(--text); margin-bottom: 6px;
+      white-space: pre-wrap; word-break: break-word;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .profile-quote-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .profile-quote-tag { font-family: 'DM Mono', monospace; font-size: 0.58rem; border: 1px solid rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 20px; color: var(--text-dim); }
+    .profile-quote-date { font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--text-faint); }
+    .profile-quote-reactions { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--text-dim); margin-left: auto; }
+    .profile-empty { text-align:center; padding:32px 16px; font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--text-faint); }
+    /* Klikalny nick w karcie */
+    .quote-author-clickable { cursor: pointer; border-bottom: 1px dotted transparent; transition: var(--transition); display: inline; }
+    .quote-author-clickable:active { color: var(--gold); border-bottom-color: var(--gold); }
   </style>
 </head>
 <body>
@@ -918,6 +980,27 @@
     <div style="margin-top:28px;font-family:'DM Mono',monospace;font-size:0.6rem;opacity:0.3;letter-spacing:0.08em;">https://siemaneczko69.github.io/cytaty.github.io/index.html</div>
   </div>
 </div>
+
+
+  <!-- PROFIL AUTORA (mobile) -->
+  <div class="profile-overlay hidden" id="profile-overlay">
+    <div class="profile-panel" id="profile-panel">
+      <div class="profile-handle-wrap"><div class="profile-handle"></div></div>
+      <button class="profile-close" id="profile-close">✕</button>
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar"></div>
+        <div class="profile-header-info">
+          <div class="profile-name" id="profile-name"></div>
+          <div class="profile-stats-row">
+            <div class="profile-stat"><strong id="profile-count">—</strong>cytatów</div>
+            <div class="profile-stat"><strong id="profile-reactions">—</strong>reakcji</div>
+            <div class="profile-stat"><strong id="profile-since">—</strong>od kiedy</div>
+          </div>
+        </div>
+      </div>
+      <div class="profile-quotes-list" id="profile-quotes-list"></div>
+    </div>
+  </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="mobile.js"></script>

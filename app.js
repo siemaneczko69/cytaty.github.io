@@ -376,7 +376,7 @@ function buildCard(q, delay) {
     <span class="quote-meta">${q.date ? formatDate(q.date) : ""}</span>
     <span class="quote-mark">&ldquo;</span>
     <p class="quote-body">${escapeHTML(q.text)}</p>
-    <div class="quote-author-line">— ${escapeHTML(q.author)}</div>
+    <div class="quote-author-line">— <span class="quote-author-clickable" data-author="${escapeHTML(q.author)}">${escapeHTML(q.author)}</span></div>
     <div class="card-footer">
       <div class="card-tags">
         <span class="quote-tag">${escapeHTML(tagLabel)}</span>
@@ -389,7 +389,10 @@ function buildCard(q, delay) {
         <button class="action-btn comment-count-btn" data-id="${q.id}" title="Komentarze">💬 <span>${q.commentCount||0}</span></button>
       </div>
     </div>`;
-  card.addEventListener("click", e => { if (!e.target.closest(".action-btn")) openModal(q); });
+  card.addEventListener("click", e => {
+    if (e.target.closest(".quote-author-clickable")) { e.stopPropagation(); openAuthorProfile(q.author); return; }
+    if (!e.target.closest(".action-btn")) openModal(q);
+  });
   card.querySelectorAll(".reaction-btn").forEach(btn => {
     btn.addEventListener("click", e => { e.stopPropagation(); toggleReaction(q.id, btn.dataset.reaction); });
   });
@@ -645,6 +648,113 @@ function initThemePicker() {
   applyTheme(current);
 }
 
+
+// ══════════════════════════════════════════
+//  👤 MINI-PROFIL AUTORA
+// ══════════════════════════════════════════
+
+// Normalizacja nicku — do porównywania
+function normalizeAuthor(name) {
+  return String(name || "").trim().toLowerCase();
+}
+
+function openAuthorProfile(authorRaw) {
+  const norm = normalizeAuthor(authorRaw);
+  // Znajdź wszystkie cytaty tego autora (case-insensitive)
+  const authorQuotes = quotes
+    .filter(q => normalizeAuthor(q.author) === norm)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (!authorQuotes.length) return;
+
+  // Wyświetlany nick = pierwszy napotkany (oryginalny zapis)
+  const displayName = authorQuotes[0].author;
+
+  // Statystyki
+  const totalReactions = authorQuotes.reduce((s, q) => {
+    const r = q.reactions || {};
+    return s + (r.heart||0) + (r.haha||0) + (r.wow||0);
+  }, 0);
+  const oldestDate = authorQuotes.reduce((oldest, q) => {
+    return (!oldest || new Date(q.date) < new Date(oldest)) ? q.date : oldest;
+  }, null);
+
+  // Avatar — pierwsza litera nicku
+  const avatar = document.getElementById("profile-avatar");
+  avatar.textContent = displayName.charAt(0).toUpperCase();
+
+  document.getElementById("profile-name").textContent = displayName;
+  document.getElementById("profile-count").textContent = authorQuotes.length;
+  document.getElementById("profile-reactions").textContent = totalReactions;
+  document.getElementById("profile-since").textContent = oldestDate ? formatDate(oldestDate) : "—";
+
+  // Lista cytatów
+  const list = document.getElementById("profile-quotes-list");
+  if (!authorQuotes.length) {
+    list.innerHTML = `<div class="profile-empty">Brak cytatów tego autora.</div>`;
+  } else {
+    list.innerHTML = "";
+    authorQuotes.forEach(q => {
+      const tagLabel = (CONFIG.tags.find(t => t.id === q.tag) || {}).label || q.tag;
+      const r = q.reactions || {};
+      const totalR = (r.heart||0) + (r.haha||0) + (r.wow||0);
+      const item = document.createElement("div");
+      item.className = "profile-quote-item";
+      item.innerHTML = `
+        <div class="profile-quote-text">${escapeHTML(q.text)}</div>
+        <div class="profile-quote-meta">
+          <span class="profile-quote-tag">${escapeHTML(tagLabel)}</span>
+          <span class="profile-quote-date">${q.date ? formatDate(q.date) : ""}</span>
+          ${totalR > 0 ? `<span class="profile-quote-reactions">❤${r.heart||0} 😂${r.haha||0} 🤔${r.wow||0}</span>` : ""}
+        </div>`;
+      item.addEventListener("click", () => {
+        closeAuthorProfile();
+        openModal(q);
+      });
+      list.appendChild(item);
+    });
+  }
+
+  document.getElementById("profile-overlay").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeAuthorProfile() {
+  document.getElementById("profile-overlay").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+
+// ══════════════════════════════════════════
+//  🔔 BADGE Z NOWYMI CYTATAMI W TYTULE
+// ══════════════════════════════════════════
+
+const TITLE_BASE = "Głosy Świata";
+const LS_LAST_SEEN = "glosy_last_seen";
+
+function updateTitleBadge() {
+  const lastSeen = localStorage.getItem(LS_LAST_SEEN);
+  if (!lastSeen || !quotes.length) {
+    document.title = TITLE_BASE;
+    return;
+  }
+  const newCount = quotes.filter(q => q.date && new Date(q.date) > new Date(lastSeen)).length;
+  document.title = newCount > 0 ? `(${newCount}) ${TITLE_BASE}` : TITLE_BASE;
+}
+
+function markAsSeen() {
+  localStorage.setItem(LS_LAST_SEEN, new Date().toISOString());
+  document.title = TITLE_BASE;
+}
+
+// Zapisz "ostatnia wizyta" gdy użytkownik opuszcza stronę
+window.addEventListener("beforeunload", markAsSeen);
+// Też zapisz gdy zakładka traci focus (przełączanie kart)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") markAsSeen();
+  if (document.visibilityState === "visible") updateTitleBadge();
+});
+
 // ─── Init ───
 document.addEventListener("DOMContentLoaded", async () => {
   showLoader("Ładowanie…");
@@ -658,6 +768,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   hideLoader();
   renderQuotes();
   updateStats();
+  updateTitleBadge();
 
   document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => {
     switchView(btn.dataset.view);
@@ -682,9 +793,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     updatePreview();
   });
   document.getElementById("go-add-btn").addEventListener("click", () => switchView("add"));
+  document.getElementById("profile-close").addEventListener("click", closeAuthorProfile);
+  document.getElementById("profile-overlay").addEventListener("click", e => { if (e.target === e.currentTarget) closeAuthorProfile(); });
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal-overlay").addEventListener("click", e => { if(e.target===e.currentTarget) closeModal(); });
-  document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); });
+  document.addEventListener("keydown", e => { if(e.key==="Escape") { closeModal(); closeAuthorProfile(); } });
 
   document.getElementById("modal-download-btn").addEventListener("click", async () => {
     const card = document.getElementById("quote-render-card");

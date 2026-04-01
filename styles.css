@@ -807,3 +807,115 @@ body {
   border: 1px solid rgba(128,128,128,0.3);
 }
 
+/* ══════════════════════════════════════════
+   MINI-PROFIL AUTORA
+══════════════════════════════════════════ */
+
+/* Klikalny nick w karcie cytatu */
+.quote-author-clickable {
+  cursor: pointer;
+  transition: var(--transition);
+  border-bottom: 1px dotted transparent;
+  display: inline;
+}
+.quote-author-clickable:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* Overlay profilu */
+.profile-overlay {
+  position: fixed; inset: 0; z-index: 250;
+  background: var(--modal-bg); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: overlayFadeIn 0.22s ease;
+}
+.profile-overlay.hidden { display: none; }
+
+.profile-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%; max-width: 560px;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  position: relative;
+  animation: modalSlideUp 0.3s cubic-bezier(0.22,1,0.36,1);
+  overflow: hidden;
+}
+
+.profile-header {
+  padding: 28px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.profile-close {
+  position: absolute; top: 14px; right: 18px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: 1rem; cursor: pointer; transition: var(--transition);
+}
+.profile-close:hover { color: var(--text); }
+
+.profile-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--gold-dim);
+  border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700;
+  color: var(--gold); margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.profile-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 700;
+  margin-bottom: 10px;
+}
+.profile-stats-row {
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+.profile-stat {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem;
+  color: var(--text-dim);
+}
+.profile-stat strong { color: var(--gold); font-size: 1rem; display: block; margin-bottom: 2px; }
+
+.profile-quotes-list {
+  overflow-y: auto; flex: 1;
+  padding: 16px 20px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.profile-quote-item {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  cursor: pointer; transition: var(--transition);
+}
+.profile-quote-item:hover { border-color: rgba(255,255,255,0.15); background: var(--surface-2); }
+
+.profile-quote-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.9rem; font-style: italic; line-height: 1.55;
+  color: var(--text); margin-bottom: 8px;
+  white-space: pre-wrap; word-break: break-word;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.profile-quote-meta {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.profile-quote-tag {
+  font-family: 'DM Mono', monospace; font-size: 0.6rem;
+  border: 1px solid rgba(255,255,255,0.12); padding: 2px 8px;
+  border-radius: 20px; color: var(--text-dim);
+}
+.profile-quote-date { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-faint); }
+.profile-quote-reactions {
+  font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-dim);
+  margin-left: auto;
+}
+.profile-empty {
+  text-align: center; padding: 40px 20px;
+  font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--text-faint);
+  line-height: 2;
+}
+
