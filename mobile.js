@@ -631,6 +631,47 @@ function escapeHTML(str){ return String(str||"").replace(/&/g,"&amp;").replace(/
 function escXML(str){ return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
 function formatDate(d){ try{return new Date(d).toLocaleDateString("pl-PL",{day:"numeric",month:"short",year:"numeric"});}catch{return d;} }
 
+
+// ══════════════════════════════════════════
+//  🎨 MOTYWY — wersja mobilna
+// ══════════════════════════════════════════
+
+function applyTheme(id) {
+  if (id === "gold-dark") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", id);
+  }
+  localStorage.setItem("glosy_theme", id);
+  document.querySelectorAll(".theme-popover-item-m").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.theme === id);
+  });
+}
+
+function initThemePickerMobile() {
+  const btn     = document.getElementById("theme-picker-btn-m");
+  const popover = document.getElementById("theme-popover-m");
+  if (!btn || !popover) return;
+
+  btn.addEventListener("click", e => {
+    e.stopPropagation();
+    popover.classList.toggle("open");
+  });
+  document.addEventListener("click", () => popover.classList.remove("open"));
+  popover.addEventListener("click", e => e.stopPropagation());
+
+  popover.querySelectorAll(".theme-popover-item-m").forEach(item => {
+    item.addEventListener("click", () => {
+      applyTheme(item.dataset.theme);
+      popover.classList.remove("open");
+    });
+  });
+
+  // Zaznacz aktualny
+  const current = localStorage.getItem("glosy_theme") || "gold-dark";
+  applyTheme(current);
+}
+
 // ─── INIT ───
 document.addEventListener("DOMContentLoaded", async () => {
   showLoader("Ładowanie…");
@@ -638,6 +679,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   buildCategoryStrip();
   buildTagSelector();
   buildColorPicker();
+  initThemePickerMobile();
   quotes=await fetchQuotes();
   hideLoader();
   renderQuotes(); updateStats();

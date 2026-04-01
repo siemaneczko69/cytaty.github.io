@@ -6,7 +6,14 @@
   <title>Cytaty — Głosy Świata</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="styles.css" />
-  <!-- Mobile redirect -->
+  <script>
+    /* Motyw — wczytaj przed renderowaniem */
+    (function(){
+      var t = localStorage.getItem("glosy_theme");
+      if (t && t !== "gold-dark") document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+    <!-- Mobile redirect -->
   <script>
     (function(){
       if (sessionStorage.getItem("glosy_force_desktop")) return;
@@ -36,6 +43,27 @@
         <button class="nav-btn" data-view="add">+ Dodaj</button>
         <button class="nav-btn" data-view="contact">Kontakt</button>
         <button class="nav-btn" data-view="about">Info</button>
+        <div class="theme-picker-wrap" id="theme-picker-wrap">
+          <button class="theme-picker-btn" id="theme-picker-btn" title="Motyw">🎨</button>
+          <div class="theme-popover" id="theme-popover">
+            <button class="theme-popover-item" data-theme="gold-dark">
+              <span class="theme-dot" style="background:linear-gradient(135deg,#1a1a2e,#c9a84c)"></span>
+              Złoty ciemny
+            </button>
+            <button class="theme-popover-item" data-theme="pink-dark">
+              <span class="theme-dot" style="background:linear-gradient(135deg,#120a10,#f4a7c3)"></span>
+              Różowy ciemny
+            </button>
+            <button class="theme-popover-item" data-theme="gold-light">
+              <span class="theme-dot" style="background:linear-gradient(135deg,#f5f0e6,#9a6f1a)"></span>
+              Złoty jasny
+            </button>
+            <button class="theme-popover-item" data-theme="pink-light">
+              <span class="theme-dot" style="background:linear-gradient(135deg,#fdf0f5,#a8416e)"></span>
+              Różowy jasny
+            </button>
+          </div>
+        </div>
         <a href="admin.html" class="nav-admin-link" title="Panel administracyjny">⚙</a>
       </nav>
     </div>

@@ -592,6 +592,59 @@ function escapeHTML(str){ return String(str).replace(/&/g,"&amp;").replace(/</g,
 function escapeXML(str){  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
 function formatDate(d){   try{return new Date(d).toLocaleDateString("pl-PL",{day:"numeric",month:"short",year:"numeric"});}catch{return d;} }
 
+
+// ══════════════════════════════════════════
+//  🎨 MOTYWY KOLORYSTYCZNE
+// ══════════════════════════════════════════
+
+const THEMES = [
+  { id: "gold-dark",  label: "Złoty ciemny",  dot: "linear-gradient(135deg,#1a1a2e,#c9a84c)" },
+  { id: "pink-dark",  label: "Różowy ciemny", dot: "linear-gradient(135deg,#120a10,#f4a7c3)" },
+  { id: "gold-light", label: "Złoty jasny",   dot: "linear-gradient(135deg,#f5f0e6,#9a6f1a)" },
+  { id: "pink-light", label: "Różowy jasny",  dot: "linear-gradient(135deg,#fdf0f5,#a8416e)" },
+];
+
+function applyTheme(id) {
+  if (id === "gold-dark") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", id);
+  }
+  localStorage.setItem("glosy_theme", id);
+  // Zaznacz aktywny w popoverze
+  document.querySelectorAll(".theme-popover-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.theme === id);
+  });
+}
+
+function initThemePicker() {
+  const btn     = document.getElementById("theme-picker-btn");
+  const popover = document.getElementById("theme-popover");
+  if (!btn || !popover) return;
+
+  // Otwórz / zamknij
+  btn.addEventListener("click", e => {
+    e.stopPropagation();
+    popover.classList.toggle("open");
+  });
+
+  // Kliknięcie poza — zamknij
+  document.addEventListener("click", () => popover.classList.remove("open"));
+  popover.addEventListener("click", e => e.stopPropagation());
+
+  // Wybór motywu
+  popover.querySelectorAll(".theme-popover-item").forEach(item => {
+    item.addEventListener("click", () => {
+      applyTheme(item.dataset.theme);
+      popover.classList.remove("open");
+    });
+  });
+
+  // Zaznacz aktualny
+  const current = localStorage.getItem("glosy_theme") || "gold-dark";
+  applyTheme(current);
+}
+
 // ─── Init ───
 document.addEventListener("DOMContentLoaded", async () => {
   showLoader("Ładowanie…");
@@ -599,6 +652,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   buildCategoryRow();
   buildTagSelector();
   buildColorPicker();
+  initThemePicker();
 
   quotes = await fetchQuotes();
   hideLoader();

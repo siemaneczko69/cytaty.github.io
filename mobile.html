@@ -2,6 +2,12 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    (function(){
+      var t = localStorage.getItem("glosy_theme");
+      if (t && t !== "gold-dark") document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Głosy Świata</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
@@ -28,6 +34,10 @@
       --radius:     14px;
       --radius-lg:  20px;
       --shadow:     0 8px 32px rgba(0,0,0,0.55);
+      --orb-1: #c9a84c;
+      --orb-2: #e8735a;
+      --orb-3: #7a6aff;
+      --header-bg: rgba(14,14,20,0.92);
       --nav-h:      64px;   /* bottom nav height */
       --top-h:      56px;   /* top bar height */
       --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
@@ -53,16 +63,16 @@
     }
     .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
     .orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.09; animation: drift 20s ease-in-out infinite alternate; }
-    .orb-1 { width: 300px; height: 300px; background: #c9a84c; top: -60px; right: -60px; }
-    .orb-2 { width: 260px; height: 260px; background: #e8735a; bottom: -60px; left: -60px; animation-delay: -7s; }
-    .orb-3 { width: 200px; height: 200px; background: #7a6aff; top: 40%; left: 30%; animation-delay: -14s; }
+    .orb-1 { width: 300px; height: 300px; background: var(--orb-1); top: -60px; right: -60px; }
+    .orb-2 { width: 260px; height: 260px; background: var(--orb-2); bottom: -60px; left: -60px; animation-delay: -7s; }
+    .orb-3 { width: 200px; height: 200px; background: var(--orb-3); top: 40%; left: 30%; animation-delay: -14s; }
     @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(25px,20px) scale(1.08); } }
 
     /* ══ TOP BAR ══ */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       height: var(--top-h);
-      background: rgba(14,14,20,0.92);
+      background: var(--header-bg);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
@@ -600,6 +610,66 @@
       display: flex; align-items: center; justify-content: center;
       background: rgba(14,14,20,0.9); backdrop-filter: blur(8px);
     }
+
+    /* ── Motywy — te same 4 co na desktopie ── */
+    :root[data-theme="pink-dark"] {
+      --bg:         #120a10; --bg-2: #1a0e17; --surface: #241320; --surface-2: #2e1829;
+      --border:     rgba(255,180,210,0.1); --gold: #f4a7c3; --gold-dim: rgba(244,167,195,0.15);
+      --text:       #f5e6ef; --text-dim: rgba(245,230,239,0.5); --text-faint: rgba(245,230,239,0.25);
+      --accent:     #c97baa; --green: #7ec8a0; --shadow: 0 8px 32px rgba(0,0,0,0.6);
+      --orb-1: #d4688e; --orb-2: #b57ec4; --orb-3: #e8a0c0;
+      --header-bg: rgba(18,10,16,0.93); --modal-bg: rgba(10,4,9,0.82);
+    }
+    :root[data-theme="gold-light"] {
+      --bg:         #f5f0e6; --bg-2: #ede7d6; --surface: #fff9ef; --surface-2: #fdf3e0;
+      --border:     rgba(100,80,20,0.12); --gold: #9a6f1a; --gold-dim: rgba(154,111,26,0.12);
+      --text:       #2a2010; --text-dim: rgba(42,32,16,0.55); --text-faint: rgba(42,32,16,0.3);
+      --accent:     #c45a2a; --shadow: 0 8px 32px rgba(100,80,20,0.18);
+      --orb-1: #d4a832; --orb-2: #e07840; --orb-3: #9080c0;
+      --header-bg: rgba(245,240,230,0.93); --modal-bg: rgba(40,30,10,0.55);
+    }
+    :root[data-theme="pink-light"] {
+      --bg:         #fdf0f5; --bg-2: #f8e4ee; --surface: #fff5f9; --surface-2: #fce8f2;
+      --border:     rgba(180,80,120,0.12); --gold: #a8416e; --gold-dim: rgba(168,65,110,0.12);
+      --text:       #2d0e1c; --text-dim: rgba(45,14,28,0.55); --text-faint: rgba(45,14,28,0.3);
+      --accent:     #c04080; --shadow: 0 8px 32px rgba(160,60,100,0.15);
+      --orb-1: #e08aaa; --orb-2: #c87ab0; --orb-3: #f0a0c8;
+      --header-bg: rgba(253,240,245,0.94); --modal-bg: rgba(60,10,30,0.5);
+    }
+    /* Jasne motywy — korekty */
+    :root[data-theme="gold-light"] .grain,
+    :root[data-theme="pink-light"] .grain { opacity: 0.2; }
+    :root[data-theme="gold-light"] .nav-tab.active,
+    :root[data-theme="pink-light"] .nav-tab.active { color: var(--gold); }
+
+    /* Theme picker w top barze */
+    .theme-picker-wrap { position: relative; }
+    .theme-picker-btn-m {
+      background: none; border: none; color: var(--text-dim);
+      font-size: 1.1rem; width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; cursor: pointer;
+    }
+    .theme-picker-btn-m:active { background: var(--surface); }
+    .theme-popover-m {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 8px;
+      display: none; flex-direction: column; gap: 4px;
+      min-width: 172px; box-shadow: var(--shadow); z-index: 500;
+      animation: fadeIn 0.16s ease;
+    }
+    .theme-popover-m.open { display: flex; }
+    .theme-popover-item-m {
+      display: flex; align-items: center; gap: 9px;
+      background: none; border: 1px solid transparent; color: var(--text-dim);
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      padding: 9px 10px; border-radius: 8px; cursor: pointer; width: 100%;
+      min-height: 40px;
+    }
+    .theme-popover-item-m:active { background: var(--gold-dim); }
+    .theme-popover-item-m.active { color: var(--gold); border-color: var(--gold-dim); background: var(--gold-dim); }
+    .theme-dot-m { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(128,128,128,0.25); }
   </style>
 </head>
 <body>
@@ -614,6 +684,23 @@
   <span class="top-logo">Głosy<em>Świata</em></span>
   <div class="top-right">
     <button class="top-icon-btn" id="search-toggle-btn" title="Szukaj">🔍</button>
+    <div class="theme-picker-wrap" id="theme-picker-wrap-m">
+      <button class="theme-picker-btn-m" id="theme-picker-btn-m" title="Motyw">🎨</button>
+      <div class="theme-popover-m" id="theme-popover-m">
+        <button class="theme-popover-item-m" data-theme="gold-dark">
+          <span class="theme-dot-m" style="background:linear-gradient(135deg,#1a1a2e,#c9a84c)"></span>Złoty ciemny
+        </button>
+        <button class="theme-popover-item-m" data-theme="pink-dark">
+          <span class="theme-dot-m" style="background:linear-gradient(135deg,#120a10,#f4a7c3)"></span>Różowy ciemny
+        </button>
+        <button class="theme-popover-item-m" data-theme="gold-light">
+          <span class="theme-dot-m" style="background:linear-gradient(135deg,#f5f0e6,#9a6f1a)"></span>Złoty jasny
+        </button>
+        <button class="theme-popover-item-m" data-theme="pink-light">
+          <span class="theme-dot-m" style="background:linear-gradient(135deg,#fdf0f5,#a8416e)"></span>Różowy jasny
+        </button>
+      </div>
+    </div>
     <a href="admin.html" class="top-icon-btn" title="Admin" style="text-decoration:none;">⚙</a>
   </div>
 </header>
