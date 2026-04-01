@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@0,400;0,500&family=Lato:wght@300;400;700&display=swap" />
   <style>
+    /* ── Motyw: złoty (domyślny) ── */
     :root {
       --bg:         #0e0e14;
       --bg-2:       #13131c;
@@ -25,6 +26,33 @@
       --radius-lg:  20px;
       --shadow:     0 8px 40px rgba(0,0,0,0.6);
       --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+      /* orb colors */
+      --orb-1: #c9a84c;
+      --orb-2: #e8735a;
+      --orb-3: #7a6aff;
+    }
+
+    /* ── Motyw: różowy ── */
+    :root[data-theme="pink"] {
+      --bg:         #120a10;
+      --bg-2:       #1a0e17;
+      --surface:    #241320;
+      --surface-2:  #2e1829;
+      --border:     rgba(255,180,210,0.1);
+      --gold:       #f4a7c3;
+      --gold-dim:   rgba(244,167,195,0.15);
+      --text:       #f5e6ef;
+      --text-dim:   rgba(245,230,239,0.5);
+      --text-faint: rgba(245,230,239,0.25);
+      --accent:     #c97baa;
+      --green:      #7ec8a0;
+      --radius:     12px;
+      --radius-lg:  20px;
+      --shadow:     0 8px 40px rgba(0,0,0,0.65);
+      --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+      --orb-1: #d4688e;
+      --orb-2: #b57ec4;
+      --orb-3: #e8a0c0;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Lato', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -34,9 +62,9 @@
       background-size: 200px; opacity: 0.5; }
     .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
     .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.08; animation: drift 20s ease-in-out infinite alternate; }
-    .orb-1 { width: 500px; height: 500px; background: #c9a84c; top: -100px; right: -100px; animation-delay: 0s; }
-    .orb-2 { width: 400px; height: 400px; background: #e8735a; bottom: -80px; left: -80px; animation-delay: -7s; }
-    .orb-3 { width: 300px; height: 300px; background: #7a6aff; top: 40%; left: 40%; animation-delay: -14s; }
+    .orb-1 { width: 500px; height: 500px; background: var(--orb-1); top: -100px; right: -100px; animation-delay: 0s; }
+    .orb-2 { width: 400px; height: 400px; background: var(--orb-2); bottom: -80px; left: -80px; animation-delay: -7s; }
+    .orb-3 { width: 300px; height: 300px; background: var(--orb-3); top: 40%; left: 40%; animation-delay: -14s; }
     @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
 
     /* LOGIN */
@@ -58,7 +86,7 @@
 
     /* PANEL SHELL */
     #panel { display: none; position: relative; z-index: 10; min-height: 100vh; }
-    .panel-header { position: sticky; top: 0; z-index: 100; background: rgba(14,14,20,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .panel-header { position: sticky; top: 0; z-index: 100; background: rgba(var(--bg-rgb,14,14,20),0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
     .panel-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; }
     .panel-logo em { color: var(--gold); font-style: italic; }
     .panel-logo .badge { font-family: 'DM Mono', monospace; font-size: 0.58rem; background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 2px 8px; border-radius: 20px; vertical-align: middle; margin-left: 8px; }
@@ -174,6 +202,44 @@
     .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.78rem; padding: 11px 22px; border-radius: var(--radius); box-shadow: var(--shadow); z-index: 9999; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── Theme toggle button ── */
+    .theme-toggle-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: var(--transition);
+      line-height: 1;
+      color: var(--text-dim);
+    }
+    .theme-toggle-btn:hover { border-color: var(--gold); }
+
+    /* Pink theme — panel-header bg override */
+    :root[data-theme="pink"] .panel-header {
+      background: rgba(18,10,16,0.93) !important;
+    }
+
+    /* Pink theme — tab-bar bg */
+    :root[data-theme="pink"] .tab-bar {
+      background: #1a0e17;
+    }
+
+    /* Pink theme — danger zone accent stays readable */
+    :root[data-theme="pink"] .danger-btn {
+      border-color: rgba(201,123,170,0.4);
+      color: var(--accent);
+    }
+    :root[data-theme="pink"] .danger-btn:hover {
+      background: rgba(201,123,170,0.1);
+    }
+
+    /* Settings section pink tweaks */
+    :root[data-theme="pink"] .settings-section {
+      background: var(--surface);
+    }
+
     @media (max-width: 600px) {
       .panel-header { padding: 0 16px; }
       .tab-bar { padding: 0 8px; overflow-x: auto; }
@@ -182,6 +248,13 @@
       .q-card-header { flex-direction: column; gap: 10px; }
     }
   </style>
+  <script>
+    /* Wczytaj motyw PRZED renderowaniem — zero flash */
+    (function(){
+      var t = localStorage.getItem("admin_theme") || "gold";
+      if (t === "pink") document.documentElement.setAttribute("data-theme","pink");
+    })();
+  </script>
 </head>
 <body>
 
@@ -212,6 +285,7 @@
     <div class="panel-logo">Głosy<em>Świata</em><span class="badge">ADMIN</span></div>
     <div class="panel-right">
       <a href="index.html" class="header-home-btn">← Strona główna</a>
+      <button class="theme-toggle-btn" id="theme-toggle-btn" title="Zmień motyw"></button>
       <button class="logout-btn" id="logout-btn">Wyloguj</button>
     </div>
   </header>
@@ -371,6 +445,29 @@
         <div class="settings-feedback" id="dangers-feedback"></div>
       </div>
       <div class="settings-section">
+        <div class="settings-title">Motyw panelu</div>
+        <div class="settings-desc">Zmiana dotyczy tylko panelu admina i jest zapamiętywana w przeglądarce.</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="theme-pick-btn" data-theme="gold" id="theme-pick-gold">
+            <span style="font-size:1.1rem;">🌑</span> Złoty <span style="font-size:0.75rem;color:var(--text-faint);">(domyślny)</span>
+          </button>
+          <button class="theme-pick-btn" data-theme="pink" id="theme-pick-pink">
+            <span style="font-size:1.1rem;">🌸</span> Różowy
+          </button>
+        </div>
+        <style>
+          .theme-pick-btn {
+            background: var(--surface-2); border: 1px solid var(--border);
+            color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.78rem;
+            padding: 12px 20px; border-radius: var(--radius); cursor: pointer;
+            transition: var(--transition); display:flex; align-items:center; gap:8px; min-height:48px;
+          }
+          .theme-pick-btn:hover { border-color: var(--gold); color: var(--text); }
+          .theme-pick-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+        </style>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-title">Informacje</div>
         <div class="settings-desc" style="margin-bottom:0;">Panel admina — Głosy Świata<br/>Baza danych: Firebase Realtime Database<br/>Autoryzacja: SHA-256 hash<br/><span id="firebase-info" style="color:var(--text-faint);">—</span></div>
       </div>
@@ -427,6 +524,38 @@
     document.getElementById("change-pwd-btn").addEventListener("click", changePassword);
     document.getElementById("delete-read-sugg-btn").addEventListener("click", deleteReadSuggestions);
     document.getElementById("firebase-info").textContent = FIREBASE_URL;
+
+    // ── Motyw ──
+    function applyTheme(theme) {
+      if (theme === "pink") {
+        document.documentElement.setAttribute("data-theme","pink");
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+      localStorage.setItem("admin_theme", theme);
+      // Przycisk w headerze
+      const btn = document.getElementById("theme-toggle-btn");
+      if (btn) btn.textContent = theme === "pink" ? "🌑 Złoty" : "🌸 Różowy";
+      // Aktywne przyciski w ustawieniach
+      document.querySelectorAll(".theme-pick-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.theme === theme);
+      });
+    }
+
+    // Inicjalizuj stan przycisków
+    const _savedTheme = localStorage.getItem("admin_theme") || "gold";
+    applyTheme(_savedTheme);
+
+    // Header toggle — przełącza między dwoma
+    document.getElementById("theme-toggle-btn").addEventListener("click", () => {
+      const current = localStorage.getItem("admin_theme") || "gold";
+      applyTheme(current === "pink" ? "gold" : "pink");
+    });
+
+    // Przyciski w ustawieniach
+    document.querySelectorAll(".theme-pick-btn").forEach(btn => {
+      btn.addEventListener("click", () => applyTheme(btn.dataset.theme));
+    });
 
     // Menadżer kolorów i kategorii
     document.getElementById("add-tag-btn").addEventListener("click", addTag);
