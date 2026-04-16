@@ -73,5 +73,3 @@ Chroniony hasłem (SHA-256, przechowywane w Firebase).
 - **Firebase Realtime Database** — backend i przechowywanie danych
 - **Google Fonts** — Playfair Display, DM Mono, Lato
 - **GitHub Pages** — hosting
-
-Hasło zostanie zapisane jako hash SHA-256 w Firebase i więcej nie trzeba tego robić.
